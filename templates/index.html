@@ -1,0 +1,162 @@
+{% extends "base.html" %}
+{% block content %}
+<main class="main">
+    <div class="container d-flex flex-column align-items-center justify-content-center py-4 search-engine">  
+        <div class="d-flex flex-column flex-md-row align-items-center text-center text-md-start gap-0">
+            <img src="{{ url_for('static', filename='assets/Logov2.png') }}" alt="logo" class="img-fluid" style="width: 100px; height: auto; z-index: 1;">
+            <div class="ms-md-3 mt-3 mt-md-0">
+                <h1 class="mb-1">Context Scholar</h1>
+                <p class="mb-0">Surfacing what matters in academic discovery.</p>
+            </div>
+        </div>
+
+        <!-- 🔘 Experiment Mode Toggle -->
+        <div class="form-check form-switch mt-4">
+            <input class="form-check-input" type="checkbox" id="experimentToggle" checked>
+            <label class="form-check-label" for="experimentToggle">Experiment Mode</label>
+        </div>
+
+        <!-- 🔹 Experiment Mode OFF (Free Search) -->
+        <form action="{{ url_for('results') }}" method="GET" id="normalForm" class="mt-4" style="max-width: 768px; width: 100%; display: none;">
+            <input type="hidden" name="experiment_mode" value="off">
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    class="form-control custom-search-input" 
+                    placeholder="Search papers, topics, or concepts..." 
+                    id="search_input" 
+                    aria-label="Search"
+                    name="query"
+                    value="{{ query }}"
+                >
+                <button class="btn custom-search-btn" type="submit">
+                    <i class="fa fa-search" aria-hidden="true"></i>
+                </button>
+            </div>
+        </form>
+
+        <!-- Experiment Search Form -->
+        <form method="POST" action="/results" id="experimentForm" class="mt-3">
+            <input type="hidden" name="experiment_mode" value="on">
+            <label for="query_id">Select a TREC-COVID Query:</label>
+            <select name="query_id" id="query_id" class="form-select">
+                {% for qid, text in queries.items() %}
+                <option value="{{ qid }}">{{ qid }} - {{ text[:80] }}</option>
+                {% endfor %}
+            </select>
+
+            <div style="display: flex; justify-content: center;">
+                <button type="submit" class="btn btn-primary mt-2" style="background-color: purple; border-color: purple;">Search</button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Cards Section -->
+    <div class="container">
+        <div class="row mt-5 justify-content-center">
+            <div class="col-10 col-sm-6 col-md-4 col-lg-3 mb-4">
+                <div class="card text-center p-3 objective-card">
+                    <img src="{{ url_for('static', filename='assets/5.png') }}" alt="icon" style="width: 40%;" class="img-fluid mx-auto mb-2">
+                    <h5 class="card-title mb-3">Discover</h5>
+                    <p class="card-subtitle small">Uncover relevant papers and authors</p>
+                </div>
+            </div>
+            <div class="col-10 col-sm-6 col-md-4 col-lg-3 mb-4">
+                <div class="card text-center p-3 objective-card">
+                    <img src="{{ url_for('static', filename='assets/4.png') }}" alt="icon" style="width: 40%;" class="img-fluid mx-auto mb-2">
+                    <h5 class="card-title mb-3">Reduce Citation Bias</h5>
+                    <p class="card-subtitle small">Focus on research value, not citation count</p>
+                </div>
+            </div>
+            <div class="col-10 col-sm-6 col-md-4 col-lg-3 mb-4">
+                <div class="card text-center p-3 objective-card">
+                    <img src="{{ url_for('static', filename='assets/3.png') }}" alt="icon" style="width: 40%;" class="img-fluid mx-auto mb-2">
+                    <h5 class="card-title mb-3">Rank Smarter</h5>
+                    <p class="card-subtitle small">BERT ranks results by semantic relevance</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- Footer -->
+<div class="footer" style="background-color: #231f20; padding-left: 2rem; padding-right: 1rem;">
+    <footer class="row row-cols-1 row-cols-sm-2 row-cols-md-5 py-4 my-4 border-top small">
+        <div class="col mb-3">
+            <h5 class="footer-title" style="color: aliceblue;">What is Context Scholar?</h5>
+            <p class="justify-content-justify" style="color: aliceblue;">
+                Context Scholar is an AI-powered academic search engine designed to help researchers discover relevant work based on semantic meaning, not citation counts. By combining fine-tuned BERT models and fairness-aware ranking, we promote equitable, context-aware research discovery.
+            </p>
+        </div>
+
+        <div class="col mb-3">
+            <h5 class="footer-title">About</h5>
+            <ul class="nav flex-column">
+                <li class="nav-item mb-2">
+                    <a href="#" class="nav-link p-0 text-muted text-decoration-none footer-anchor" data-bs-toggle="modal" data-bs-target="#missionModal">Our Mission</a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a href="#" class="nav-link p-0 text-muted text-decoration-none footer-anchor" data-bs-toggle="modal" data-bs-target="#thesisModal">Open Thesis & Paper</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="col mb-3">
+            <h5 class="footer-title">Product</h5>
+            <ul class="nav flex-column">
+                <li class="nav-item mb-2">
+                    <a href="#" class="nav-link p-0 text-muted text-decoration-none footer-anchor" data-bs-toggle="modal" data-bs-target="#semanticModal">Semantic Search Overview</a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a href="#" class="nav-link p-0 text-muted text-decoration-none footer-anchor" data-bs-toggle="modal" data-bs-target="#biasModal">Citation Bias Mitigation</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="col mb-3">
+            <h5 class="footer-title">Code & Toolkit</h5>
+            <ul class="nav flex-column">
+                <li class="nav-item mb-2">
+                    <a href="#" class="nav-link p-0 text-muted text-decoration-none footer-anchor" data-bs-toggle="modal" data-bs-target="#apiModal">Toolkit Access</a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a href="#" class="nav-link p-0 text-muted text-decoration-none footer-anchor" data-bs-toggle="modal" data-bs-target="#playgroundModal">Query Playground</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="col mb-3">
+            <h5 class="footer-title">Help</h5>
+            <ul class="nav flex-column">
+                <li class="nav-item mb-2">
+                    <a href="#" class="nav-link p-0 text-muted text-decoration-none footer-anchor" data-bs-toggle="modal" data-bs-target="#faqModal">FAQ</a>
+                </li>
+            </ul>
+        </div>
+    </footer>
+</div>
+
+<!-- JS to toggle between forms -->
+<script>
+function updateForms() {
+    const experimentToggle = document.getElementById("experimentToggle");
+    const experimentForm = document.getElementById("experimentForm");
+    const normalForm = document.getElementById("normalForm");
+
+    if (experimentToggle.checked) {
+        experimentForm.style.display = "block";
+        normalForm.style.display = "none";
+    } else {
+        experimentForm.style.display = "none";
+        normalForm.style.display = "block";
+    }
+}
+
+// Run on toggle change
+document.getElementById("experimentToggle").addEventListener("change", updateForms);
+
+// Run once on page load (so it's correct initially)
+window.onload = updateForms;
+</script>
+{% include "modals.html" %}
+{% endblock %}

@@ -1,0 +1,62 @@
+body {
+    background-image: url('assets/background1.png') !important;
+    background-image: url('assets/background2.png') !important;
+    background-position: fixed !important;
+    background-repeat: no-repeat !important;
+    color: #a086c7 !important;
+    background-color: #232323 !important;
+}
+
+.background1, .background2 { 
+    display: block;
+    position: fixed;
+    width: 100%;
+    height: 100vh;
+}
+
+.search-engine {
+    margin-top: 7rem;
+} 
+
+#search_input.custom-search-input {
+        border: 4px solid #a086c7;
+        border-right: none;
+        border-radius: 20px 0 0 20px;
+        box-shadow: none;
+    }
+
+.custom-search-btn {
+        border: 4px solid #a086c7;
+        border-left: none;
+        border-radius: 0 20px 20px 0;
+        background-color: #a086c7 !important;
+        color: white !important;
+        padding: 0 16px;
+        z-index: 1;
+}
+
+.custom-search-btn:hover {
+        background-color: #8d6fc2;
+        color: #232323 !important;
+}
+
+.input-group .form-control:focus {
+        box-shadow: none;
+} 
+
+.objective-card {
+    background-color: #efebfe !important;
+}
+
+.card-title, .card-subtitle {
+    color: #3f275f; 
+    font-family: 'Times New Roman', Times, serif;
+}
+
+.footer-title {
+    color: #efebfe !important;
+}
+
+.footer-anchor {
+    color: #a086c7 !important;
+}

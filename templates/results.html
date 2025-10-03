@@ -1,0 +1,184 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="d-flex flex-md-row justify-content-center align-items-center mt-5">
+    <div class="d-flex flex-column flex-md-row align-items-center text-center text-md-start gap-0">
+        <a href="{{ url_for('index') }}">
+            <img src="{{ url_for('static', filename='assets/Logov2.png') }}" 
+                 alt="logo" class="img-fluid" style="width: 60px; height: auto; z-index: 1;">
+        </a>
+        <div class="ms-md-3 mt-3 mt-md-0">
+            <h1 class="mb-1">Context Scholar</h1>
+        </div>
+    </div>
+
+    {# determine experiment mode from either form (POST) or query params (GET) #}
+    {% set exp_mode = (request.form.get('experiment_mode') == 'on') or (request.args.get('experiment_mode') == 'on') %}
+
+    {% if exp_mode %}
+    <!-- Dropdown if experiment mode ON -->
+    <form method="POST" action="/results" class="ms-3">
+        <input type="hidden" name="experiment_mode" value="on">
+        <label for="query_id">Select a TREC-COVID Query:</label>
+        <select name="query_id" id="query_id" class="form-select">
+            {% for qid, text in queries.items() %}
+            <option value="{{ qid }}"
+                {% if (request.form.get('query_id') == qid) or (request.args.get('query_id') == qid) %}selected{% endif %}>
+                {{ qid }} - {{ text[:80] }}
+            </option>
+            {% endfor %}
+        </select>
+        <div style="display: flex; justify-content: right;">
+                <button type="submit" class="btn btn-primary mt-2" style="background-color: purple; border-color: purple;">Search</button>
+        </div>
+    </form>
+    {% else %}
+    <!-- Free search bar if experiment mode OFF -->
+    <form action="{{ url_for('results') }}" method="GET" id="normalForm" class="mt-4" style="max-width: 768px; width: 100%; margin-left: 1rem;">
+        <input type="hidden" name="experiment_mode" value="off">
+        <div class="input-group">
+            <input 
+                type="text" 
+                class="form-control custom-search-input" 
+                placeholder="Search papers, topics, or concepts..." 
+                id="search_input" 
+                aria-label="Search"
+                name="query"
+                value="{{ request.form.get('query') or request.args.get('query', '') }}"
+            >
+            <button class="btn custom-search-btn" type="submit">
+                <i class="fa fa-search" aria-hidden="true"></i>
+            </button>
+        </div>
+    </form>
+    {% endif %}
+</div> 
+
+{% if results %}
+    <div class="d-flex flex-column align-items-center mt-5">
+        <h2 class="text-center mb-5">🔍 Top Matching Papers</h2>
+        {% for paper in results %}
+            <div class="paper-card card mb-3" style="width: 80%;">
+                <div class="card-body">
+                    <div class="paper-title">
+                        <a href="{{ paper.url }}" target="_blank">{{ paper.rank }}. {{ paper.title }}</a>
+                    </div>
+                    <div class="authors">👤 {{ paper.authors }}</div>
+                    <p class="card-text">
+                        <strong>Citations:</strong> {{ paper.citations }} |
+                        <strong>Year:</strong> {{ paper.year }}
+                    </p>
+                    {% if exp_mode %}
+                    <!-- Show scores only if experiment mode is ON -->
+                    <p class="card-text">
+                        <strong>Final Score:</strong> {{ paper.score }} |
+                        <strong>Bi-Encoder:</strong> {{ paper.bi_score }} |
+                        <strong>Initial Score:</strong> {{ paper.initial_score }} |
+                        <strong>Raw Score:</strong> {{ paper.initial_raw }}
+                    </p>
+                    {% endif %}
+                    <div class="abstract">{{ paper.abstract }}</div>
+                    <!-- Action Bar -->
+                    <div class="d-flex justify-content-between align-items-center mt-3">
+                        <!-- Left: Buttons -->
+                        <div class="btn-group" role="group">
+                            <a href="{{ paper.url }}" target="_blank" class="btn btn-sm btn-primary">
+                                View
+                            </a>
+                            <button type="button" class="btn btn-sm btn-outline-success">
+                                Save
+                            </button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary">
+                                Cite
+                            </button>
+                        </div>
+
+                        <!-- Right: Labels -->
+                        <div>
+                            {% if paper.fairness_boosted %}
+                                <span class="badge bg-info text-dark">Fairness Boosted</span>
+                            {% endif %}
+                            {% if paper.high_relevance %}
+                                <span class="badge bg-warning text-dark">High Relevance</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        {% endfor %}
+{% else %}
+    <div class="mt-5" style="height: 50vh;">
+        <h1 class="text-center">No papers found</h1>
+    </div>
+{% endif %}
+
+{# Show metrics only if experiment mode is ON and metrics are available #}
+{% if exp_mode and ndcg is defined %}
+        <h4>Evaluation Metrics</h4>
+        <ul>
+            <li>NDCG: {{ ndcg }}</li>
+            <li>MRR: {{ mrr }}</li>
+            <li>nFAIRR: {{ nfairr }}</li>
+        </ul>
+{% endif %}
+
+</div>
+<!-- Footer -->
+<div class="footer" style="background-color: #231f20; padding-left: 2rem; padding-right: 1rem;">
+    <footer class="row row-cols-1 row-cols-sm-2 row-cols-md-5 py-4 my-4 border-top small">
+        <div class="col mb-3">
+            <h5 class="footer-title" style="color: aliceblue;">What is Context Scholar?</h5>
+            <p class="justify-content-justify" style="color: aliceblue;">
+                Context Scholar is an AI-powered academic search engine designed to help researchers discover relevant work based on semantic meaning, not citation counts. By combining fine-tuned BERT models and fairness-aware ranking, we promote equitable, context-aware research discovery.
+            </p>
+        </div>
+
+        <div class="col mb-3">
+            <h5 class="footer-title">About</h5>
+            <ul class="nav flex-column">
+                <li class="nav-item mb-2">
+                    <a href="#" class="nav-link p-0 text-muted text-decoration-none footer-anchor" data-bs-toggle="modal" data-bs-target="#missionModal">Our Mission</a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a href="#" class="nav-link p-0 text-muted text-decoration-none footer-anchor" data-bs-toggle="modal" data-bs-target="#thesisModal">Open Thesis & Paper</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="col mb-3">
+            <h5 class="footer-title">Product</h5>
+            <ul class="nav flex-column">
+                <li class="nav-item mb-2">
+                    <a href="#" class="nav-link p-0 text-muted text-decoration-none footer-anchor" data-bs-toggle="modal" data-bs-target="#semanticModal">Semantic Search Overview</a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a href="#" class="nav-link p-0 text-muted text-decoration-none footer-anchor" data-bs-toggle="modal" data-bs-target="#biasModal">Citation Bias Mitigation</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="col mb-3">
+            <h5 class="footer-title">Code & Toolkit</h5>
+            <ul class="nav flex-column">
+                <li class="nav-item mb-2">
+                    <a href="#" class="nav-link p-0 text-muted text-decoration-none footer-anchor" data-bs-toggle="modal" data-bs-target="#apiModal">Toolkit Access</a>
+                </li>
+                <li class="nav-item mb-2">
+                    <a href="#" class="nav-link p-0 text-muted text-decoration-none footer-anchor" data-bs-toggle="modal" data-bs-target="#playgroundModal">Query Playground</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="col mb-3">
+            <h5 class="footer-title">Help</h5>
+            <ul class="nav flex-column">
+                <li class="nav-item mb-2">
+                    <a href="#" class="nav-link p-0 text-muted text-decoration-none footer-anchor" data-bs-toggle="modal" data-bs-target="#faqModal">FAQ</a>
+                </li>
+            </ul>
+        </div>
+    </footer>
+</div>
+
+<!-- Footer Modals -->
+{% include "modals.html" %}
+{% endblock %}

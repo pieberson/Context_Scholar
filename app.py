@@ -128,10 +128,10 @@ print("Loading models...")
 MODEL1_OUT = "./biencoder_minilm_weighted_msmarco-1"
 MODEL2_OUT = "./crossencoder_citation_trec_covid-1"
 
-# bi_encoder = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-# cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
-bi_encoder = SentenceTransformer(MODEL1_OUT)  # loads custom WeightedPooling automatically
-cross_encoder = CrossEncoder(MODEL2_OUT)
+bi_encoder = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
+# bi_encoder = SentenceTransformer(MODEL1_OUT)  # loads custom WeightedPooling automatically
+# cross_encoder = CrossEncoder(MODEL2_OUT)
 
 
 # --- Evaluation Metrics ---
@@ -386,3 +386,4 @@ def results():
 if __name__ == '__main__':
     print("Flask app is starting...")
     app.run(debug=True)
+

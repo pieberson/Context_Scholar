@@ -1,6 +1,9 @@
 from flask import Flask, render_template, request
 from sentence_transformers import SentenceTransformer, CrossEncoder, util, models
 from collections import defaultdict, Counter
+from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import Bcrypt
+from flask_app import create_app, db
 import pandas as pd
 import torch
 import math
@@ -9,7 +12,8 @@ import numpy as np
 import os, json
 import torch.nn as nn
 
-app = Flask(__name__)
+# app = Flask(__name__)
+app = create_app()
 
 # --- Custom WeightedPooling class  ---
 class WeightedPooling(nn.Module):
@@ -379,11 +383,13 @@ def results():
         nfairr=round(nfairr, 4),
         queries=queries,
         experiment_mode=experiment_mode
-    )
-
+    ) 
 
 # --- Run App ---
 if __name__ == '__main__':
-    print("Flask app is starting...")
-    app.run(debug=True)
+    with app.app_context():
+        db.create_all()
+        print("Database tables created successfully.")
+        print("Flask app is starting...")
+    app.run(debug=True, port=5001)
 

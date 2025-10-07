@@ -4,8 +4,4 @@ document.addEventListener("DOMContentLoaded", () => {
         .forEach(form => form.addEventListener("submit", () => {
             if (overlay) overlay.style.display = "block";
         }));
-<<<<<<< HEAD
 });
-=======
-});
->>>>>>> origin/jho_branch

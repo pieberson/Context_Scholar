@@ -3,10 +3,6 @@ body {
     font-family: 'Segoe UI', sans-serif;
 }
 
-
-
-
-
 .paper-card {
     background-color: #fff;
     border-radius: 12px;
@@ -32,4 +28,26 @@ hr {
     border: 0;
     height: 1px;
     background: #ddd;
+} 
+
+.text-purple {
+  color: #a086c7 !important;
+}
+
+.text-purple:hover {
+  color: #a086c7 !important;
+}
+
+.modal-content {
+  animation: fadeInUp 0.3s ease-in-out;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.btn:focus, .form-control:focus {
+  box-shadow: 0 0 0 0.25rem rgba(138, 43, 226, 0.25);
+  border-color: #a086c7;
 }

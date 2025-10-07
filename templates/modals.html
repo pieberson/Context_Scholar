@@ -123,7 +123,7 @@
             </h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
-        <form method="POST" action="{{ url_for('index') }}">
+        <form method="POST" action="{{ url_for('main.login') }}">
             <div class="modal-body p-4">
             <div class="mb-3">
                 <label for="loginEmail" class="form-label fw-bold">Email address</label>
@@ -165,7 +165,7 @@
             </h5>
             <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
         </div>
-        <form method="POST" action="{{ url_for('index') }}">
+        <form method="POST" action="{{ url_for('main.signup') }}">
             <div class="modal-body p-4">
             <div class="mb-3">
                 <label for="signupName" class="form-label fw-bold">Full Name</label>

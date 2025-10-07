@@ -16,7 +16,7 @@
 
     {% if exp_mode %}
     <!-- Dropdown if experiment mode ON -->
-    <form method="POST" action="/results" class="ms-3">
+    <form method="POST" action="/results" class="ms-3" id="experimentFormResult">
         <input type="hidden" name="experiment_mode" value="on">
         <label for="query_id">Select a TREC-COVID Query:</label>
         <select name="query_id" id="query_id" class="form-select">
@@ -33,7 +33,7 @@
     </form>
     {% else %}
     <!-- Free search bar if experiment mode OFF -->
-    <form action="{{ url_for('results') }}" method="GET" id="normalForm" class="mt-4" style="max-width: 768px; width: 100%; margin-left: 1rem;">
+    <form action="{{ url_for('results') }}" method="GET" id="normalFormResult" class="mt-4" style="max-width: 768px; width: 100%; margin-left: 1rem;">
         <input type="hidden" name="experiment_mode" value="off">
         <div class="input-group">
             <input 
@@ -185,7 +185,7 @@
             </ul>
         </div>
     </footer>
-</div>
+</div> 
 
 <!-- Footer Modals -->
 {% include "modals.html" %}

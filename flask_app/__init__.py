@@ -10,7 +10,7 @@ bcrypt = Bcrypt()
 # --- Load CSV Files ---
 print("Loading corpus, queries, and qrels...")
 
-corpus_df = pd.read_csv("corpus_with_citations.csv")
+corpus_df = pd.read_csv("corpus_complete.csv")
 queries_df = pd.read_csv("queries.csv")
 qrels_df = pd.read_csv("qrels.csv")
 

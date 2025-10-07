@@ -54,18 +54,35 @@ class WeightedPooling(nn.Module):
 # --- Load CSV Files ---
 print("Loading corpus, queries, and qrels...")
 
-corpus_df = pd.read_csv("corpus_with_citations.csv")
+corpus_df = pd.read_csv("corpus_complete.csv")
 queries_df = pd.read_csv("queries.csv")
 qrels_df = pd.read_csv("qrels.csv")
 
-corpus = {
-    row["doc_id"]: {
-        "title": row["title"],
-        "text": row["text"],
-        "citations": int(row.get("citations", 0))
+corpus = {}
+for _, row in corpus_df.iterrows():
+    doc_id = str(row["doc_id"])
+    title = str(row.get("title", "Untitled"))
+    text = str(row.get("text", ""))
+    citations = int(row.get("citations", 0) or 0)
+    year = int(float(row.get("year", 0))) if not pd.isna(row.get("year")) else "N/A"
+    authors_raw = row.get("authors", "")
+    paper_url = str(row.get("paper_url", "")).strip()
+
+    # Clean up authors (remove extra quotes)
+    if isinstance(authors_raw, str):
+        authors = authors_raw.strip('"').strip("'")
+    else:
+        authors = ""
+
+    corpus[doc_id] = {
+        "title": title,
+        "text": text,
+        "citations": citations,
+        "year": year,
+        "authors": authors,
+        "paper_url": paper_url
     }
-    for _, row in corpus_df.iterrows()
-}
+
 
 queries = {
     str(row["query_id"]): row["text"]
@@ -125,13 +142,13 @@ print(f"Indexed {N} documents, avgdl={avgdl:.2f}, vocabulary={len(doc_freq)} ter
 
 # --- Load Models ---
 print("Loading models...")
-MODEL1_OUT = "./biencoder_minilm_weighted_msmarco-1"
-MODEL2_OUT = "./crossencoder_citation_trec_covid-1"
+MODEL1_OUT = "./biencoder_minilm_weighted_msmarco"
+MODEL2_OUT = "./crossencoder_citation_trec_covid"
 
-bi_encoder = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
-# bi_encoder = SentenceTransformer(MODEL1_OUT)  # loads custom WeightedPooling automatically
-# cross_encoder = CrossEncoder(MODEL2_OUT)
+#bi_encoder = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+#cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
+bi_encoder = SentenceTransformer(MODEL1_OUT)  # loads custom WeightedPooling automatically
+cross_encoder = CrossEncoder(MODEL2_OUT)
 
 
 # --- Evaluation Metrics ---
@@ -163,15 +180,16 @@ def compute_nfairr_citation(ranked_doc_ids, top_k=50):
     for rank, doc_id in enumerate(top_ranked):
         citations = corpus[doc_id].get("citations", 1)
         # fairness weight: lower for highly cited docs, higher for low-cited
-        fairness_weight = 1 / math.log1p(citations)
+        fairness_weight = 1 / math.log1p(citations + 1e-6)
         score = fairness_weight / (rank + 1)  # rank discount
         citation_weights.append(score)
 
     # Ideal: sort by fairness (low citations first → highest weight)
     ideal_order = sorted(
-        [1 / math.log1p(corpus[doc_id].get("citations", 1)) for doc_id in top_ranked],
+        [1 / math.log1p(corpus[doc_id].get("citations", 1) + 1e-6) for doc_id in top_ranked],
         reverse=True
     )
+
     ideal_scores = [w / (i + 1) for i, w in enumerate(ideal_order)]
 
     actual = sum(citation_weights)
@@ -216,26 +234,24 @@ def initial_scores(query_tokens):
 
     # Calculate adaptive thresholds using the median
     if scores:
-        bm25_threshold = np.median(scores)  # Use median of current scores
+        score_threshold = np.median(scores)  # Use median of current scores
     else:
-        bm25_threshold = 0.0
+        score_threshold = 0.0
     
     citations_list = [corpus[doc_id_list[doc_idx]].get("citations", 0) for doc_idx in range(N)]
     if citations_list:
         citation_threshold = np.median(citations_list)  # Use median of all citations
     else:
         citation_threshold = 0.0
-    
-    print(f"Calculated Thresholds: BM25 = {bm25_threshold:.2f}, Citations = {citation_threshold:.0f}")
 
     # 🔹 Apply citation boost with conditional logic
     for doc_idx in range(N):
-        bm25_score = scores[doc_idx]
+        raw_score1 = scores[doc_idx]
         citations = corpus[doc_id_list[doc_idx]].get("citations", 0)
 
         # Check for both conditions before applying the boost
-        if bm25_score > bm25_threshold and citations < citation_threshold:
-            boost = 1 + 0.1 * math.log1p(citations)
+        if raw_score1 > score_threshold and citations < citation_threshold:
+            boost = 1 + 0.1 * math.log1p(citations + 1)
             scores[doc_idx] *= boost
 
     return scores
@@ -275,10 +291,22 @@ def search_local(query_text, top_k=50, bm25_k=200, bi_k=100):
     bi_top_texts = [bm25_for_biencoder_texts[i] for i in bi_top_indices]
     bi_top_scores = [bi_scores[i] for i in bi_top_indices]
 
-    # Step 3: Cross-Encoder reranking
-    # The top 50 from the bi-encoder are already in bi_top_texts
-    cross_inputs = [(query_text, doc_text) for doc_text in bi_top_texts]
+    # Step 3: Cross-Encoder reranking with citation normalization (same as training)
+    max_cite = max([corpus[doc_id]["citations"] for doc_id in corpus if corpus[doc_id]["citations"] > 0] + [1])
+
+    def normalize_citation(c):
+        return 1.0 - (c / max_cite)
+
+    cross_inputs = []
+    for doc_id in bi_top_doc_ids:
+        doc_info = corpus[doc_id]
+        citation_norm = normalize_citation(doc_info.get("citations", 0))
+        doc_text = f"[CIT={citation_norm:.3f}] {doc_info['title']}. {doc_info['text']}"
+        cross_inputs.append((query_text, doc_text))
+
+    # Predict citation-aware relevance scores
     cross_scores = cross_encoder.predict(cross_inputs)
+
 
     # Final sort of the top 50 documents from the cross-encoder
     ranked = sorted(
@@ -302,36 +330,35 @@ def index():
 def results():
     experiment_mode = request.args.get("experiment_mode") or request.form.get("experiment_mode", "off")
 
+    # --- Get query text ---
     if experiment_mode == "on":
-        # --- Experiment mode ON: uses query_id dropdown ---
         selected_query_id = request.args.get('query_id') or request.form.get('query_id')
         if not selected_query_id:
             return render_template('results.html', query="", results=[], queries=queries, experiment_mode=experiment_mode)
-
         query_text = queries[selected_query_id]
-
     else:
-        # --- Experiment mode OFF: uses free-text input ---
         query_text = request.args.get("query") or request.form.get("query")
         if not query_text:
             return render_template('results.html', query="", results=[], queries=queries, experiment_mode=experiment_mode)
 
     # --- Run retrieval pipeline ---
-    ranked, initial_lookup, initial_raw_lookup,  bi_lookup = search_local(query_text, top_k=50)
+    ranked, initial_lookup, initial_raw_lookup, bi_lookup = search_local(query_text, top_k=50)
 
+    # --- Build rel_map only if experiment mode ON ---
     rel_map = {}
     if experiment_mode == "on":
-        # Only qrels available for experiment mode
         selected_query_id = request.args.get('query_id') or request.form.get('query_id')
         rel_map = qrels.get(selected_query_id, {})
 
-    predicted_rels = []
-    final_results = []
-    ranked_doc_ids = []
+    # --- Prepare result containers ---
+    predicted_rels, final_results, ranked_doc_ids = [], [], []
 
     value_threshold = np.median(list(initial_raw_lookup.values())) if initial_raw_lookup else 0.0
 
-    for rank, (doc_id, bi_score, score) in enumerate(ranked, start=1):
+    # --- Only evaluate top 50 ranked docs (cross-encoder output) ---
+    top_ranked = ranked[:50]
+
+    for rank, (doc_id, bi_score, score) in enumerate(top_ranked, start=1):
         doc = corpus[doc_id]
         rel_score = rel_map.get(doc_id, 0) if experiment_mode == "on" else 0
         predicted_rels.append(rel_score)
@@ -347,7 +374,9 @@ def results():
             'rank': rank,
             'title': doc['title'],
             'abstract': doc['text'],
-            'url': f"https://www.semanticscholar.org/paper/{doc_id}",
+            'url': doc.get("paper_url") or f"https://www.semanticscholar.org/paper/{doc_id}",
+            'authors': doc.get("authors", "Unknown"),
+            'year': doc.get("year", "N/A"),
             'score': round(float(score), 4),
             'bi_score': round(float(bi_lookup.get(doc_id, 0.0)), 4),
             'initial_raw': round(raw_val, 4),
@@ -358,17 +387,18 @@ def results():
             'high_relevance': high_relevance
         })
 
-
-    # --- Metrics ---
-    if experiment_mode == "on":
-        ideal_rels = sorted(rel_map.values(), reverse=True)
+    # --- Compute metrics only on top 50 docs ---
+    if experiment_mode == "on" and predicted_rels:
+        ideal_rels = sorted(
+            [rel_map.get(doc_id, 0) for doc_id in ranked_doc_ids],
+            reverse=True
+        )[:50]
         ndcg = compute_ndcg(predicted_rels, ideal_rels)
         mrr = compute_mrr(predicted_rels)
     else:
-        ndcg = 0
-        mrr = 0
+        ndcg, mrr = 0, 0
 
-    nfairr = compute_nfairr_citation(ranked_doc_ids, top_k=50)
+    nfairr = compute_nfairr_citation(ranked_doc_ids[:50], top_k=50)
 
     return render_template(
         'results.html',
@@ -386,4 +416,3 @@ def results():
 if __name__ == '__main__':
     print("Flask app is starting...")
     app.run(debug=True)
-

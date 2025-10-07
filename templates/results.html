@@ -23,7 +23,7 @@
             {% for qid, text in queries.items() %}
             <option value="{{ qid }}"
                 {% if (request.form.get('query_id') == qid) or (request.args.get('query_id') == qid) %}selected{% endif %}>
-                {{ qid }} - {{ text[:80] }}
+                 {{ text[:80] }}
             </option>
             {% endfor %}
         </select>
@@ -87,9 +87,17 @@
                             <button type="button" class="btn btn-sm btn-outline-success">
                                 Save
                             </button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary">
+                            <button type="button" 
+                                    class="btn btn-sm btn-outline-secondary cite-btn"
+                                    data-bs-toggle="modal" 
+                                    data-bs-target="#citeModal"
+                                    data-title="{{ paper.title }}"
+                                    data-authors="{{ paper.authors }}"
+                                    data-year="{{ paper.year }}"
+                                    data-url="{{ paper.url }}">
                                 Cite
                             </button>
+
                         </div>
 
                         <!-- Right: Labels -->
@@ -181,4 +189,56 @@
 
 <!-- Footer Modals -->
 {% include "modals.html" %}
+<!-- Citation Modal -->
+<div class="modal fade" id="citeModal" tabindex="-1" aria-labelledby="citeModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="citeModalLabel">Cite This Paper</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" style="word-wrap: break-word; overflow-wrap: break-word; white-space: normal;">
+        <p><strong>Title:</strong> <span id="cite-title"></span></p>
+        <p><strong>Authors:</strong> <span id="cite-authors"></span></p>
+        <p><strong>Year:</strong> <span id="cite-year"></span></p>
+        <hr>
+        <p><strong>APA:</strong></p>
+        <p id="apa-citation" class="fst-italic text-muted" style="word-break: break-word;"></p>
+        <p><strong>MLA:</strong></p>
+        <p id="mla-citation" class="fst-italic text-muted" style="word-break: break-word;"></p>
+      </div>
+
+      <div class="modal-footer">
+        <a id="cite-url" href="#" target="_blank" class="btn btn-primary">View Paper</a>
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+  const citeModal = document.getElementById('citeModal');
+  citeModal.addEventListener('show.bs.modal', function (event) {
+    const button = event.relatedTarget;
+
+    const title = button.getAttribute('data-title') || '';
+    const authors = button.getAttribute('data-authors') || '';
+    const year = button.getAttribute('data-year') || '';
+    const url = button.getAttribute('data-url') || '#';
+
+    // Basic APA & MLA formatting
+    const apa = `${authors} (${year}). ${title}. Retrieved from ${url}`;
+    const mla = `${authors}. "${title}." ${year}. ${url}.`;
+
+    // Inject into modal
+    citeModal.querySelector('#cite-title').textContent = title;
+    citeModal.querySelector('#cite-authors').textContent = authors;
+    citeModal.querySelector('#cite-year').textContent = year;
+    citeModal.querySelector('#apa-citation').textContent = apa;
+    citeModal.querySelector('#mla-citation').textContent = mla;
+    citeModal.querySelector('#cite-url').setAttribute('href', url);
+  });
+});
+</script>
 {% endblock %}

@@ -111,4 +111,99 @@
       </div>
     </div>
   </div>
-</div>
+</div>  
+
+<!-- 🔹 Login Modal -->
+    <div class="modal fade" id="loginModal" tabindex="-1" aria-labelledby="loginModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4" style="overflow:hidden;">
+        <div class="modal-header text-white" style="background: linear-gradient(135deg, #9863d1 0%, #9a5cd1 100%);">
+            <h5 class="modal-title fw-semibold" id="loginModalLabel">
+            <i class="fa fa-sign-in-alt me-2"></i>Log In to Context Scholar
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="POST" action="{{ url_for('index') }}">
+            <div class="modal-body p-4">
+            <div class="mb-3">
+                <label for="loginEmail" class="form-label fw-bold">Email address</label>
+                <input type="email" class="form-control form-control-lg rounded-3 border-secondary-subtle" id="loginEmail" name="email" required>
+            </div>
+            <div class="mb-3">
+                <label for="loginPassword" class="form-label fw-bold">Password</label>
+                <input type="password" class="form-control form-control-lg rounded-3 border-secondary-subtle" id="loginPassword" name="password" required>
+            </div>
+            <div class="form-check mt-2">
+                <input class="form-check-input" type="checkbox" id="rememberMe">
+                <label class="form-check-label small" for="rememberMe">Remember me</label>
+            </div>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0">
+            <button type="submit" class="btn w-100 py-2 text-white fw-bold" 
+                style="background: linear-gradient(135deg, #9863d1 0%, #9a5cd1 100%); border: none;">
+                Log In
+            </button>
+            <p class="small text-center mt-3 mb-0">
+                Don’t have an account? 
+                <a href="#" data-bs-target="#signupModal" data-bs-toggle="modal" data-bs-dismiss="modal" class="fw-semibold text-decoration-none text-purple">
+                Sign up here
+                </a>
+            </p>
+            </div>
+        </form>
+        </div>
+    </div>
+    </div>
+
+    <!-- 🔹 Sign Up Modal -->
+    <div class="modal fade" id="signupModal" tabindex="-1" aria-labelledby="signupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4" style="overflow:hidden;">
+        <div class="modal-header text-white" style="background: linear-gradient(135deg, #9863d1 0%, #9a5cd1 100%);">
+            <h5 class="modal-title fw-semibold" id="signupModalLabel">
+            <i class="fa fa-user-plus me-2"></i>Create an Account
+            </h5>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <form method="POST" action="{{ url_for('index') }}">
+            <div class="modal-body p-4">
+            <div class="mb-3">
+                <label for="signupName" class="form-label fw-bold">Full Name</label>
+                <input type="text" class="form-control form-control-lg rounded-3 border-secondary-subtle" id="signupName" name="name" required>
+            </div>
+            <div class="mb-3">
+                <label for="signupEmail" class="form-label fw-bold">Email address</label>
+                <input type="email" class="form-control form-control-lg rounded-3 border-secondary-subtle" id="signupEmail" name="email" required>
+            </div>
+            <div class="mb-3">
+                <label for="signupPassword" class="form-label fw-bold">Password</label>
+                <input type="password" class="form-control form-control-lg rounded-3 border-secondary-subtle" id="signupPassword" name="password" required>
+            </div>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0">
+            <button type="submit" class="btn w-100 py-2 text-white fw-semibold" 
+                style="background: linear-gradient(135deg, #9863d1 0%, #9a5cd1 100%); border: none;">
+                Sign Up
+            </button>
+            <p class="small text-center mt-3 mb-0">
+                Already have an account? 
+                <a href="#" data-bs-target="#loginModal" data-bs-toggle="modal" data-bs-dismiss="modal" class="fw-semibold text-decoration-none text-purple">
+                Log in
+                </a>
+            </p>
+            </div>
+        </form>
+        </div>
+    </div>
+    </div>
+
+    <div id="loadingOverlay" class="academic-overlay">
+    <div class="academic-loader">
+        <div class="spinner"></div>
+        <h4>Analyzing academic sources...</h4>
+        <p>Please wait while we retrieve and rank the most relevant papers.</p>
+        <div class="progress-bar">
+        <div class="progress"></div>
+        </div>
+    </div>
+    </div>

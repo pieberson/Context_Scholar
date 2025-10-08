@@ -35,8 +35,24 @@
         {% endwith %} 
 
         {% if session.user_id %}
-            <span class="text-white">Welcome, {{ session.user_name }}!</span>
-            <a href="{{ url_for('main.logout') }}" class="btn btn-sm btn-outline-light ms-2">Logout</a>
+            <div class="d-flex align-items-center">
+                <span class="text-white me-3">Welcome, {{ session.user_name }}!</span>
+
+                <!-- Profile Button -->
+                <a href="{{ url_for('main.profile') }}" class="btn btn-sm btn-outline-light me-2">
+                    Profile
+                </a>
+
+                <!-- Bookmarks Button -->
+                <a href="{{ url_for('main.bookmarks') }}" class="btn btn-sm btn-outline-light me-2">
+                    Bookmarks
+                </a>
+
+                <!-- Logout Button -->
+                <a href="{{ url_for('main.logout') }}" class="btn btn-sm btn-outline-light">
+                    Logout
+                </a>
+            </div>
         {% else %}
             <!-- 🔹 Login Button -->
             <button 

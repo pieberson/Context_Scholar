@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">Profile Page</h2>
+
+    <div class="row">
+        <!-- Edit Profile Section -->
+        <div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    Edit Profile
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="mb-3">
+                            <label for="name" class="form-label">Full Name</label>
+                            <input type="text" class="form-control" id="name" name="name" value="{{ user.name }}" required>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="nickname" class="form-label">Nickname (Optional)</label>
+                            <input type="text" class="form-control" id="nickname" name="nickname" value="{{ user.nickname or '' }}">
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

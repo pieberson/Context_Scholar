@@ -55,4 +55,38 @@ def login():
 def logout():
     session.clear()
     flash('Logged out successfully.', 'info')
-    return redirect(url_for('main.index'))
+    return redirect(url_for('main.index')) 
+
+# 🔹 Profile Route
+@bp.route('/profile', methods=['GET', 'POST'])
+def profile():
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
+
+    user = User.query.get(session['user_id'])
+
+    if request.method == 'POST':
+        name = request.form.get('name')
+        nickname = request.form.get('nickname')
+        if name:
+            user.name = name
+        user.nickname = nickname
+        db.session.commit()
+        flash('Profile updated successfully!', 'success')
+        session['user_name'] = nickname if nickname else name  # update displayed name
+        return redirect(url_for('main.profile'))
+
+    # If GET, show profile
+    bookmarks = []  # replace with your actual bookmark query later
+    return render_template('profile.html', user=user, bookmarks=bookmarks)
+
+@bp.route('/bookmarks')
+def bookmarks():
+    if 'user_id' not in session:
+        return redirect(url_for('main.login'))
+
+    user_id = session['user_id']
+    # Example query – adjust depending on your database structure
+    bookmarks = bookmarks.query.filter_by(user_id=user_id).all()
+    
+    return render_template('bookmarks.html', bookmarks=bookmarks)

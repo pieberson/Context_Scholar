@@ -1,0 +1,22 @@
+{% extends 'base.html' %}
+
+{% block content %}  
+<div class="col-md-6">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-success text-white">
+                    Your Bookmarks
+                </div>
+                <div class="card-body">
+                    {% if bookmarks %}
+                        <ul class="list-group">
+                            {% for item in bookmarks %}
+                                <li class="list-group-item">{{ item.title }}</li>
+                            {% endfor %}
+                        </ul>
+                    {% else %}
+                        <p>No bookmarks yet.</p>
+                    {% endif %}
+                </div>
+            </div>
+</div>
+{% endblock %}

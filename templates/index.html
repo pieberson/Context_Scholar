@@ -138,11 +138,8 @@
 </div> 
 
 
-
-
-<!-- JS to toggle between forms -->
 <script>
-function updateForms() {
+    function updateForms() {
     const experimentToggle = document.getElementById("experimentToggle");
     const experimentForm = document.getElementById("experimentForm");
     const normalForm = document.getElementById("normalForm");
@@ -160,7 +157,10 @@ function updateForms() {
 document.getElementById("experimentToggle").addEventListener("change", updateForms);
 
 // Run once on page load (so it's correct initially)
-window.onload = updateForms;
+windows.onload = updateForms();
+
 </script>
+
+<!-- JS to toggle between forms -->
 {% include "modals.html" %}
 {% endblock %}

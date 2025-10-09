@@ -333,20 +333,29 @@ def index():
 @app.route('/results', methods=['GET', 'POST'])
 def results():
     experiment_mode = request.args.get("experiment_mode") or request.form.get("experiment_mode", "off")
+    query_id = request.args.get("query_id") or request.form.get("query_id")
+    query_text = request.args.get("query") or request.form.get("query")
 
     # --- Get query text ---
     if experiment_mode == "on":
-        selected_query_id = request.args.get('query_id') or request.form.get('query_id')
+        selected_query_id = request.args.get("query_id") or request.form.get("query_id")
         if not selected_query_id:
             return render_template('results.html', query="", results=[], queries=queries, experiment_mode=experiment_mode)
         query_text = queries[selected_query_id]
+        print("🧠 DEBUG: Received selected_query_id =", selected_query_id)  
     else:
         query_text = request.args.get("query") or request.form.get("query")
         if not query_text:
             return render_template('results.html', query="", results=[], queries=queries, experiment_mode=experiment_mode)
 
+    
+    print("🧠 DEBUG: Experiment mode =", experiment_mode)
+    print("🧠 DEBUG: Incoming query parameters:", dict(request.args))
+    print("🧩 DEBUG: Received query_id =", query_id)
+    print("🧩 DEBUG: Received query_text =", query_text)
+
     # --- Run retrieval pipeline ---
-    ranked, initial_lookup, initial_raw_lookup, bi_lookup = search_local(query_text, top_k=50)
+    ranked, initial_lookup, initial_raw_lookup, bi_lookup = search_local(query_text, top_k=50) 
 
     # --- Build rel_map only if experiment mode ON ---
     rel_map = {}
@@ -356,12 +365,10 @@ def results():
 
     # --- Prepare result containers ---
     predicted_rels, final_results, ranked_doc_ids = [], [], []
-
     value_threshold = np.median(list(initial_raw_lookup.values())) if initial_raw_lookup else 0.0
 
     # --- Only evaluate top 50 ranked docs (cross-encoder output) ---
     top_ranked = ranked[:50]
-
     for rank, (doc_id, bi_score, score) in enumerate(top_ranked, start=1):
         doc = corpus[doc_id]
         rel_score = rel_map.get(doc_id, 0) if experiment_mode == "on" else 0
@@ -404,6 +411,41 @@ def results():
 
     nfairr = compute_nfairr_citation(ranked_doc_ids[:50], top_k=50)
 
+   
+    date_filter = request.args.get("date_filter") or request.form.get("date_filter")
+    start_year = request.args.get('start_year')
+    end_year = request.args.get('end_year')
+    sort_by = request.args.get("sort_by") or request.form.get("sort_by")
+
+    # --- Date Filtering ---
+    if date_filter == 'recent':
+        # Only numeric years, sort descending
+        final_results.sort(
+            key=lambda r: int(r['year']) if str(r['year']).isdigit() else 0,
+            reverse=True
+        )
+        print("🧠 DEBUG: Sorting by most recent year...")
+        print("Top 5 years after sort:", [r['year'] for r in final_results[:5]])
+
+    elif date_filter == 'custom' and start_year and end_year:
+        try:
+            start_y, end_y = int(start_year), int(end_year)
+            final_results = [
+                r for r in final_results
+                if str(r['year']).isdigit() and start_y <= int(r['year']) <= end_y
+            ]
+        except ValueError:
+            print("⚠️ Invalid custom year range input.")
+    else:
+        print("🧠 DEBUG: No date filtering applied.")
+
+    # --- Sort by dropdown ---
+    if sort_by == 'citations':
+        final_results.sort(key=lambda x: x.get('citations', 0), reverse=True)
+    elif sort_by == 'relevance' and date_filter != 'recent':
+        final_results.sort(key=lambda x: x.get('score', 0), reverse=True)
+
+    # ============================================================
     return render_template(
         'results.html',
         query=query_text,
@@ -414,6 +456,7 @@ def results():
         queries=queries,
         experiment_mode=experiment_mode
     ) 
+
 
 # --- Run App ---
 if __name__ == '__main__':

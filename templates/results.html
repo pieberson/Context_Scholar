@@ -1,135 +1,212 @@
 {% extends "base.html" %}
 {% block content %}
-<div class="d-flex flex-md-row justify-content-center align-items-center mt-5">
-    <div class="d-flex flex-column flex-md-row align-items-center text-center text-md-start gap-0">
-        <a href="{{ url_for('index') }}">
-            <img src="{{ url_for('static', filename='assets/Logov2.png') }}" 
-                 alt="logo" class="img-fluid" style="width: 60px; height: auto; z-index: 1;">
-        </a>
-        <div class="ms-md-3 mt-3 mt-md-0">
-            <h1 class="mb-1">Context Scholar</h1>
-        </div>
-    </div>
 
-    {# determine experiment mode from either form (POST) or query params (GET) #}
-    {% set exp_mode = (request.form.get('experiment_mode') == 'on') or (request.args.get('experiment_mode') == 'on') %}
-
-    {% if exp_mode %}
-    <!-- Dropdown if experiment mode ON -->
-    <form method="POST" action="/results" class="ms-3" id="experimentFormResult">
-        <input type="hidden" name="experiment_mode" value="on">
-        <label for="query_id">Select a TREC-COVID Query:</label>
-        <select name="query_id" id="query_id" class="form-select">
-            {% for qid, text in queries.items() %}
-            <option value="{{ qid }}"
-                {% if (request.form.get('query_id') == qid) or (request.args.get('query_id') == qid) %}selected{% endif %}>
-                 {{ text[:80] }}
-            </option>
-            {% endfor %}
-        </select>
-        <div style="display: flex; justify-content: right;">
-                <button type="submit" class="btn btn-primary mt-2" style="background-color: purple; border-color: purple;">Search</button>
-        </div>
-    </form>
-    {% else %}
-    <!-- Free search bar if experiment mode OFF -->
-    <form action="{{ url_for('results') }}" method="GET" id="normalFormResult" class="mt-4" style="max-width: 768px; width: 100%; margin-left: 1rem;">
-        <input type="hidden" name="experiment_mode" value="off">
-        <div class="input-group">
-            <input 
-                type="text" 
-                class="form-control custom-search-input" 
-                placeholder="Search papers, topics, or concepts..." 
-                id="search_input" 
-                aria-label="Search"
-                name="query"
-                value="{{ request.form.get('query') or request.args.get('query', '') }}"
-            >
-            <button class="btn custom-search-btn" type="submit">
-                <i class="fa fa-search" aria-hidden="true"></i>
-            </button>
-        </div>
-    </form>
-    {% endif %}
-</div> 
-
-{% if results %}
-    <div class="d-flex flex-column align-items-center mt-5">
-        <h2 class="text-center mb-5">🔍 Top Matching Papers</h2>
-        {% for paper in results %}
-            <div class="paper-card card mb-3" style="width: 80%;">
-                <div class="card-body">
-                    <div class="paper-title">
-                        <a href="{{ paper.url }}" target="_blank">{{ paper.rank }}. {{ paper.title }}</a>
-                    </div>
-                    <div class="authors">👤 {{ paper.authors }}</div>
-                    <p class="card-text">
-                        <strong>Citations:</strong> {{ paper.citations }} |
-                        <strong>Year:</strong> {{ paper.year }}
-                    </p>
-                    {% if exp_mode %}
-                    <!-- Show scores only if experiment mode is ON -->
-                    <p class="card-text">
-                        <strong>Final Score:</strong> {{ paper.score }} |
-                        <strong>Bi-Encoder:</strong> {{ paper.bi_score }} |
-                        <strong>Initial Score:</strong> {{ paper.initial_score }} |
-                        <strong>Raw Score:</strong> {{ paper.initial_raw }}
-                    </p>
-                    {% endif %}
-                    <div class="abstract">{{ paper.abstract }}</div>
-                    <!-- Action Bar -->
-                    <div class="d-flex justify-content-between align-items-center mt-3">
-                        <!-- Left: Buttons -->
-                        <div class="btn-group" role="group">
-                            <a href="{{ paper.url }}" target="_blank" class="btn btn-sm btn-primary">
-                                View
-                            </a>
-                            <button type="button" class="btn btn-sm btn-outline-success">
-                                Save
-                            </button>
-                            <button type="button" 
-                                    class="btn btn-sm btn-outline-secondary cite-btn"
-                                    data-bs-toggle="modal" 
-                                    data-bs-target="#citeModal"
-                                    data-title="{{ paper.title }}"
-                                    data-authors="{{ paper.authors }}"
-                                    data-year="{{ paper.year }}"
-                                    data-url="{{ paper.url }}">
-                                Cite
-                            </button>
-
-                        </div>
-
-                        <!-- Right: Labels -->
-                        <div>
-                            {% if paper.fairness_boosted %}
-                                <span class="badge bg-info text-dark">Fairness Boosted</span>
-                            {% endif %}
-                            {% if paper.high_relevance %}
-                                <span class="badge bg-warning text-dark">High Relevance</span>
-                            {% endif %}
-                        </div>
-                    </div>
-                </div>
+<div class="main-container my-5">
+    <!-- Header Section -->
+    <div class="d-flex flex-md-row justify-content-center align-items-center mt-4">
+        <div class="d-flex flex-column flex-md-row align-items-center text-center text-md-start gap-0">
+            <a href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='assets/Logov2.png') }}" 
+                     alt="logo" class="img-fluid" style="width: 60px; height: auto; z-index: 1;">
+            </a>
+            <div class="ms-md-3 mt-3 mt-md-0">
+                <h1 class="mb-1">Context Scholar</h1>
             </div>
-        {% endfor %}
-{% else %}
-    <div class="mt-5" style="height: 50vh;">
-        <h1 class="text-center">No papers found</h1>
+        </div>
+
+        {# determine experiment mode from either form (POST) or query params (GET) #}
+        {% set exp_mode = (request.form.get('experiment_mode') == 'on') or (request.args.get('experiment_mode') == 'on') %}
+
+        {% if exp_mode %}
+        <!-- Dropdown if experiment mode ON -->
+        <form method="POST" action="/results" class="ms-3" id="experimentFormResult">
+            <input type="hidden" name="experiment_mode" value="on">
+            <label for="query_id">Select a TREC-COVID Query:</label>
+            <select name="query_id" id="query_id" class="form-select">
+                {% for qid, text in queries.items() %}
+                <option value="{{ qid }}"
+                    {% if (request.form.get('query_id') == qid) or (request.args.get('query_id') == qid) %}selected{% endif %}>
+                     {{ text[:80] }}
+                </option>
+                {% endfor %}
+            </select>
+            <div style="display: flex; justify-content: right;">
+                    <button type="submit" class="btn btn-primary mt-2" style="background-color: purple; border-color: purple;">Search</button>
+            </div>
+        </form>
+        {% else %}
+        <!-- Free search bar if experiment mode OFF -->
+        <form action="{{ url_for('results') }}" method="GET" id="normalFormResult" class="mt-4" style="max-width: 768px; width: 100%; margin-left: 1rem;">
+            <input type="hidden" name="experiment_mode" value="off">
+            <div class="input-group">
+                <input 
+                    type="text" 
+                    class="form-control custom-search-input" 
+                    placeholder="Search papers, topics, or concepts..." 
+                    id="search_input" 
+                    aria-label="Search"
+                    name="query"
+                    value="{{ request.form.get('query') or request.args.get('query', '') }}"
+                >
+                <button class="btn custom-search-btn" type="submit">
+                    <i class="fa fa-search" aria-hidden="true"></i>
+                </button>
+            </div>
+        </form>
+        {% endif %}
     </div>
-{% endif %}
 
-{# Show metrics only if experiment mode is ON and metrics are available #}
-{% if exp_mode and ndcg is defined %}
-        <h4>Evaluation Metrics</h4>
-        <ul>
-            <li>NDCG: {{ ndcg }}</li>
-            <li>MRR: {{ mrr }}</li>
-            <li>nFAIRR: {{ nfairr }}</li>
-        </ul>
-{% endif %}
+    <!-- Main Content Area -->
+    <div class="content-wrapper">
+        <div class="filters-section">
+            <div class="filter-card">
+                <div class="filter-header">
+                    <h3 class="filter-title">Filters</h3>
+                    <a href="{{ url_for('results') }}" class="filter-reset">Reset</a>
+                </div>
+                
+                <form method="GET" action="/results" id="filterForm">
+                    <input type="hidden" name="experiment_mode" value="{{ 'on' if exp_mode else 'off' }}">
 
+                    {% if exp_mode %}
+                        <input type="hidden" name="query_id" value="{{  request.args.get('query_id', '') }}">
+                    {% else %}
+                        <input type="hidden" name="query" value="{{ request.args.get('query', '') }}">
+                    {% endif %}
+
+                    <!-- Sort by Date -->
+                    <div class="filter-group">
+                        <div class="filter-label">Sort by Date</div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="date_filter" id="mostRecent" value="recent"
+                                    {% if request.args.get('date_filter') == 'recent' %}checked{% endif %}>
+                            <label class="form-check-label" for="mostRecent">
+                                Most Recent
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="radio" name="date_filter" id="customRange" value="custom"
+                                    {% if request.args.get('date_filter') == 'custom' %}checked{% endif %}>
+                            <label class="form-check-label" for="customRange">
+                                Custom Range
+                            </label>
+                        </div>
+                        
+                        <!-- Custom Date Inputs (only visible if 'Custom Range' selected) -->
+                        <div id="customYearFields" class="custom-year-fields" 
+                             style="display: {% if request.args.get('date_filter') == 'custom' %}flex{% else %}none{% endif %};">
+                            <input type="number" name="start_year" placeholder="Start Year" min="1900" max="2025"
+                                   value="{{ request.args.get('start_year', '') }}">
+                            <input type="number" name="end_year" placeholder="End Year" min="1900" max="2025"
+                                   value="{{ request.args.get('end_year', '') }}">
+                        </div>
+                    </div>
+
+                    <!-- Sort By Dropdown -->
+                    <div class="filter-group">
+                        <label class="filter-label" for="sort_by">Order By</label>
+                        <select class="form-select" name="sort_by" id="sort_by">
+                            <option value="relevance" {% if request.args.get('sort_by') == 'relevance' %}selected{% endif %}>
+                                Relevance
+                            </option>
+                            <option value="citations" {% if request.args.get('sort_by') == 'citations' %}selected{% endif %}>
+                                Citation Count
+                            </option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100" style="background-color: #6f42c1; border-color: #6f42c1">
+                        Apply Filters
+                    </button>
+                    <input type="hidden" name="query_id" value="{{ query_id if query_id else request.args.get('query_id', '') }}">
+                </form>
+            </div>
+        </div>
+        <!-- Results Section -->
+        <div class="results-section">
+            {% if results %}
+                <h2 class="text-center mb-4">🔍 Top Matching Papers</h2>
+                {% for paper in results %}
+                    <div class="paper-card card">
+                        <div class="card-body">
+                            <div class="paper-title">
+                                <a href="{{ paper.url }}" target="_blank">{{ paper.rank }}. {{ paper.title }}</a>
+                            </div>
+                            <div class="authors">👤 {{ paper.authors }}</div>
+                            <p class="card-text">
+                                <strong>Citations:</strong> {{ paper.citations }} |
+                                <strong>Year:</strong> {{ paper.year }}
+                            </p>
+                            {% if exp_mode %}
+                            <!-- Show scores only if experiment mode is ON -->
+                            <p class="card-text">
+                                <strong>Final Score:</strong> {{ paper.score }} |
+                                <strong>Bi-Encoder:</strong> {{ paper.bi_score }} |
+                                <strong>Initial Score:</strong> {{ paper.initial_score }} |
+                                <strong>Raw Score:</strong> {{ paper.initial_raw }}
+                            </p>
+                            {% endif %}
+                            <div class="abstract">{{ paper.abstract }}</div>
+                            <!-- Action Bar -->
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <!-- Left: Buttons -->
+                                <div class="btn-group" role="group">
+                                    <a href="{{ paper.url }}" target="_blank" class="btn btn-sm btn-primary">
+                                        View
+                                    </a>
+                                    <button type="button" class="btn btn-sm btn-outline-success">
+                                        Save
+                                    </button>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-secondary cite-btn"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#citeModal"
+                                            data-title="{{ paper.title }}"
+                                            data-authors="{{ paper.authors }}"
+                                            data-year="{{ paper.year }}"
+                                            data-url="{{ paper.url }}">
+                                        Cite
+                                    </button>
+                                </div>
+
+                                <!-- Right: Labels -->
+                                <div>
+                                    {% if paper.fairness_boosted %}
+                                        <span class="badge bg-info text-dark">Fairness Boosted</span>
+                                    {% endif %}
+                                    {% if paper.high_relevance %}
+                                        <span class="badge bg-warning text-dark">High Relevance</span>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+                
+                <!-- Metrics Section -->
+                {% if exp_mode and ndcg is defined %}
+                <div class="metrics">
+                    <h4>Evaluation Metrics</h4>
+                    <ul class="metrics-list">
+                        <li><strong>NDCG:</strong> {{ ndcg }}</li>
+                        <li><strong>MRR:</strong> {{ mrr }}</li>
+                        <li><strong>nFAIRR:</strong> {{ nfairr }}</li>
+                    </ul>
+                </div>
+                {% endif %}
+                
+            {% else %}
+                <div class="mt-5 text-center" style="height: 50vh;">
+                    <h1>No papers found</h1>
+                    <p class="text-muted">Try adjusting your search terms or filters</p>
+                </div>
+            {% endif %}
+        </div>
+
+        <!-- Filters Section -->
+    </div>
 </div>
+
 <!-- Footer -->
 <div class="footer" style="background-color: #231f20; padding-left: 2rem; padding-right: 1rem;">
     <footer class="row row-cols-1 row-cols-sm-2 row-cols-md-5 py-4 my-4 border-top small">
@@ -218,6 +295,7 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+  // Citation Modal
   const citeModal = document.getElementById('citeModal');
   citeModal.addEventListener('show.bs.modal', function (event) {
     const button = event.relatedTarget;
@@ -238,6 +316,20 @@ document.addEventListener('DOMContentLoaded', function () {
     citeModal.querySelector('#apa-citation').textContent = apa;
     citeModal.querySelector('#mla-citation').textContent = mla;
     citeModal.querySelector('#cite-url').setAttribute('href', url);
+  });
+  
+  // Show/hide custom year fields based on radio selection
+  const dateRadios = document.querySelectorAll('input[name="date_filter"]');
+  const customYearFields = document.getElementById('customYearFields');
+  
+  dateRadios.forEach(radio => {
+    radio.addEventListener('change', function() {
+      if (this.value === 'custom') {
+        customYearFields.style.display = 'flex';
+      } else {
+        customYearFields.style.display = 'none';
+      }
+    });
   });
 });
 </script>

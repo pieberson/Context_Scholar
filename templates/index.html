@@ -137,30 +137,6 @@
     </footer>
 </div> 
 
-
-<script>
-    function updateForms() {
-    const experimentToggle = document.getElementById("experimentToggle");
-    const experimentForm = document.getElementById("experimentForm");
-    const normalForm = document.getElementById("normalForm");
-
-    if (experimentToggle.checked) {
-        experimentForm.style.display = "block";
-        normalForm.style.display = "none";
-    } else {
-        experimentForm.style.display = "none";
-        normalForm.style.display = "block";
-    }
-}
-
-// Run on toggle change
-document.getElementById("experimentToggle").addEventListener("change", updateForms);
-
-// Run once on page load (so it's correct initially)
-windows.onload = updateForms();
-
-</script>
-
 <!-- JS to toggle between forms -->
 {% include "modals.html" %}
 {% endblock %}

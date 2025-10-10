@@ -154,8 +154,16 @@
                                     <a href="{{ paper.url }}" target="_blank" class="btn btn-sm btn-primary">
                                         View
                                     </a>
-                                    <button type="button" class="btn btn-sm btn-outline-success">
-                                        Save
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-success save-btn"
+                                            data-title="{{ paper.title }}"
+                                            data-authors="{{ paper.authors }}"
+                                            data-year="{{ paper.year }}"
+                                            data-url="{{ paper.url }}"
+                                            data-citations="{{ paper.citations }}"
+                                            data-score="{{ paper.score }}"
+                                            aria-label="Save this paper">
+                                            <i class="fa fa-save" aria-hidden="true"></i> Save>
                                     </button>
                                     <button type="button" 
                                             class="btn btn-sm btn-outline-secondary cite-btn"
@@ -164,8 +172,9 @@
                                             data-title="{{ paper.title }}"
                                             data-authors="{{ paper.authors }}"
                                             data-year="{{ paper.year }}"
-                                            data-url="{{ paper.url }}">
-                                        Cite
+                                            data-url="{{ paper.url }}"
+                                            aria-label="Cite this paper">
+                                            <i class="fa fa-quote-right" aria-hidden="true"></i> Cite
                                     </button>
                                 </div>
 
@@ -293,6 +302,42 @@
   </div>
 </div>
 
+<!--Save Modal-->
+<div class="modal fade" id="saveModal" tabindex="-1" aria-labelledby="saveModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="saveModalLabel">Paper Saved</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        This paper has been saved to your profile.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Already Saved Modal -->
+<div class="modal fade" id="alreadySavedModal" tabindex="-1" aria-labelledby="alreadySavedModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="alreadySavedModalLabel">Paper Already Saved</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body text-center">
+        This paper is already in your profile.
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script src="{{ url_for('static', filename='js/script.js') }}"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function () {
@@ -329,6 +374,46 @@ document.addEventListener('DOMContentLoaded', function () {
         customYearFields.style.display = 'flex';
       } else {
         customYearFields.style.display = 'none';
+      }
+    });
+  });
+});
+
+//save modal
+document.addEventListener('DOMContentLoaded', function () {
+  document.querySelectorAll('.save-btn').forEach(button => {
+    button.addEventListener('click', async () => {
+      const paperData = {
+        title: button.dataset.title,
+        authors: button.dataset.authors,
+        year: button.dataset.year,
+        url: button.dataset.url,
+        citations: button.dataset.citations,
+        score: button.dataset.score
+      };
+
+      try {
+        const response = await fetch('/save-paper', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(paperData)
+        });
+
+        const result = await response.json();
+
+        if (result.status === 'success') {
+          const saveModal = new bootstrap.Modal(document.getElementById('saveModal'));
+          saveModal.show();
+        }
+        else if (result.status === 'exists') {
+            const alreadySavedModal = new bootstrap.Modal(document.getElementById('alreadySavedModal'));
+            alreadySavedModal.show();
+        } 
+        else {
+          alert(result.message);
+        }
+      } catch (err) {
+        alert("An error occurred. Please try again.");
       }
     });
   });

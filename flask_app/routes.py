@@ -1,6 +1,6 @@
-from flask import Blueprint, render_template, request, redirect, url_for, flash, session
+from flask import Blueprint, render_template, request, redirect, url_for, flash, session, jsonify
 from flask_app import queries, db, bcrypt
-from flask_app.models import User
+from flask_app.models import User, SavedPaper
 
 bp = Blueprint('main', __name__)
 
@@ -73,12 +73,12 @@ def profile():
         user.nickname = nickname
         db.session.commit()
         flash('Profile updated successfully!', 'success')
-        session['user_name'] = nickname if nickname else name  # update displayed name
+        # Update displayed name in session
+        session['user_name'] = nickname if nickname else name
         return redirect(url_for('main.profile'))
 
-    # If GET, show profile
-    bookmarks = []  # replace with your actual bookmark query later
-    return render_template('profile.html', user=user, bookmarks=bookmarks)
+    # GET request – just show profile page
+    return render_template('profile.html', user=user)
 
 @bp.route('/bookmarks')
 def bookmarks():
@@ -86,7 +86,52 @@ def bookmarks():
         return redirect(url_for('main.login'))
 
     user_id = session['user_id']
-    # Example query – adjust depending on your database structure
-    bookmarks = bookmarks.query.filter_by(user_id=user_id).all()
+    bookmarks_list = SavedPaper.query.filter_by(user_id=user_id).all()
+    
+    return render_template('bookmarks.html', bookmarks=bookmarks_list)
     
     return render_template('bookmarks.html', bookmarks=bookmarks)
+
+@bp.route('/save-paper', methods=['POST'])
+def save_paper():
+    if 'user_id' not in session:
+        return jsonify({'status': 'error', 'message': 'Please log in first.'}), 401
+
+    data = request.get_json()
+
+    # Avoid duplicates
+    existing = SavedPaper.query.filter_by(user_id=session['user_id'], url=data.get('url')).first()
+    if existing:
+        return jsonify({'status': 'exists', 'message': 'This paper is already saved.'})
+
+    new_paper = SavedPaper(
+        user_id=session['user_id'],
+        title=data.get('title'),
+        authors=data.get('authors'),
+        year=data.get('year'),
+        url=data.get('url'),
+        citations=data.get('citations'),
+        score=data.get('score')
+    )
+
+    db.session.add(new_paper)
+    db.session.commit()
+    return jsonify({'status': 'success', 'message': 'Paper saved successfully!'})
+
+from flask import request, jsonify
+
+@bp.route('/remove-bookmark', methods=['POST'])
+def remove_bookmark():
+    if 'user_id' not in session:
+        return jsonify({'status': 'error', 'message': 'Please log in first.'}), 401
+
+    data = request.get_json()
+    paper_id = data.get('id')
+    paper = SavedPaper.query.filter_by(id=paper_id, user_id=session['user_id']).first()
+
+    if not paper:
+        return jsonify({'status': 'error', 'message': 'Paper not found.'})
+
+    db.session.delete(paper)
+    db.session.commit()
+    return jsonify({'status': 'success', 'message': 'Paper removed from bookmarks.'})

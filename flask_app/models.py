@@ -12,3 +12,18 @@ class User(db.Model):
 
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password, password)
+
+from flask_app import db
+from flask_app.models import User  # if needed
+
+class SavedPaper(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    title = db.Column(db.String(500), nullable=False)
+    authors = db.Column(db.String(500))
+    year = db.Column(db.String(10))
+    url = db.Column(db.String(1000))
+    citations = db.Column(db.Integer)
+    score = db.Column(db.Float)
+
+    user = db.relationship('User', backref=db.backref('saved_papers', lazy=True))

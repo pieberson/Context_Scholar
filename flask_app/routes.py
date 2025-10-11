@@ -68,17 +68,21 @@ def profile():
     if request.method == 'POST':
         name = request.form.get('name')
         nickname = request.form.get('nickname')
+        bio = request.form.get('bio')
         if name:
             user.name = name
         user.nickname = nickname
+        user.bio = bio
         db.session.commit()
         flash('Profile updated successfully!', 'success')
         # Update displayed name in session
         session['user_name'] = nickname if nickname else name
         return redirect(url_for('main.profile'))
 
+    bookmark_list = SavedPaper.query.filter_by(user_id=user.id).all()
+
     # GET request – just show profile page
-    return render_template('profile.html', user=user)
+    return render_template('profile.html', user=user, bookmarks=bookmark_list)
 
 @bp.route('/bookmarks')
 def bookmarks():

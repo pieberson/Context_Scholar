@@ -57,47 +57,5 @@
     </div>
 </div>
 
-<!-- Saved Paper Removal Modal -->
-<div class="modal fade" id="removeModal" tabindex="-1" aria-labelledby="removeModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="removeModalLabel">Removed from Bookmarks</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        Paper has been successfully removed from your bookmarks.
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    document.querySelectorAll('.remove-bookmark-btn').forEach(button => {
-        button.addEventListener('click', async () => {
-            const paperId = button.dataset.id;
-
-            const response = await fetch('/remove-bookmark', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({id: paperId})
-            });
-
-            const result = await response.json();
-
-            if (result.status === 'success') {
-                const removeModal = new bootstrap.Modal(document.getElementById('removeModal'));
-                removeModal.show();
-                button.closest('.paper-card').remove();
-            } else {
-                alert(result.message);
-            }
-        });
-    });
-});
-</script>
+{% include "modals.html" %}
 {% endblock %}

@@ -339,7 +339,7 @@
   </div>
 </div>
 
-<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+
 <script>
 document.addEventListener('DOMContentLoaded', function () {
   // Citation Modal
@@ -380,44 +380,5 @@ document.addEventListener('DOMContentLoaded', function () {
   });
 });
 
-//save modal
-document.addEventListener('DOMContentLoaded', function () {
-  document.querySelectorAll('.save-btn').forEach(button => {
-    button.addEventListener('click', async () => {
-      const paperData = {
-        title: button.dataset.title,
-        authors: button.dataset.authors,
-        year: button.dataset.year,
-        url: button.dataset.url,
-        citations: button.dataset.citations,
-        score: button.dataset.score
-      };
-
-      try {
-        const response = await fetch('/save-paper', {
-          method: 'POST',
-          headers: {'Content-Type': 'application/json'},
-          body: JSON.stringify(paperData)
-        });
-
-        const result = await response.json();
-
-        if (result.status === 'success') {
-          const saveModal = new bootstrap.Modal(document.getElementById('saveModal'));
-          saveModal.show();
-        }
-        else if (result.status === 'exists') {
-            const alreadySavedModal = new bootstrap.Modal(document.getElementById('alreadySavedModal'));
-            alreadySavedModal.show();
-        } 
-        else {
-          alert(result.message);
-        }
-      } catch (err) {
-        alert("An error occurred. Please try again.");
-      }
-    });
-  });
-});
 </script> 
 {% endblock %}

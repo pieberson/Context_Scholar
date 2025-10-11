@@ -149,10 +149,10 @@ print("Loading models...")
 MODEL1_OUT = "./biencoder_minilm_weighted_msmarco"
 MODEL2_OUT = "./crossencoder_citation_trec_covid"
 
-bi_encoder = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
-cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
-#bi_encoder = SentenceTransformer(MODEL1_OUT)  # loads custom WeightedPooling automatically
-#cross_encoder = CrossEncoder(MODEL2_OUT)
+#bi_encoder = SentenceTransformer('sentence-transformers/all-MiniLM-L6-v2')
+#cross_encoder = CrossEncoder('cross-encoder/ms-marco-MiniLM-L-6-v2')
+bi_encoder = SentenceTransformer(MODEL1_OUT)  
+cross_encoder = CrossEncoder(MODEL2_OUT)
 
 
 # --- Evaluation Metrics ---
@@ -172,7 +172,7 @@ def compute_mrr(relevances):
 
 def compute_nfairr_citation(ranked_doc_ids, top_k=100):
     """
-    Improved NFaiRR fairness metric for citation balance.
+    NFaiRR fairness metric for citation balance.
     Higher score = top results favor low-cited (less biased) papers.
     """
     top_ranked = ranked_doc_ids[:top_k]
@@ -191,7 +191,6 @@ def compute_nfairr_citation(ranked_doc_ids, top_k=100):
     # Compute fairness weights: higher for low citations
     fairness_weights = [1 - (c / max_cite) for c in norm_citations]
 
-    # Apply rank-based discount (higher ranks matter more)
     discounted_fairness = [
         w / math.log2(rank + 2) for rank, w in enumerate(fairness_weights)
     ]
@@ -208,7 +207,7 @@ def compute_nfairr_citation(ranked_doc_ids, top_k=100):
     return nfairr
 
 
-# --- Initial manual scoring ---
+# --- Initial Retrieval Scoring ---
 def raw_scores(query_tokens):
     scores = [0.0] * N
     if N == 0:
@@ -226,7 +225,8 @@ def raw_scores(query_tokens):
             scores[doc_idx] += score_contrib
     return scores
 
-def initial_scores(query_tokens):
+
+def initial_retrieval_scores(query_tokens):
     scores = [0.0] * N
     if N == 0:
         return scores
@@ -244,13 +244,13 @@ def initial_scores(query_tokens):
 
     # Calculate adaptive thresholds using the median
     if scores:
-        score_threshold = np.median(scores)  # Use median of current scores
+        score_threshold = np.median(scores)
     else:
         score_threshold = 0.0
-    
+
     citations_list = [corpus[doc_id_list[doc_idx]].get("citations", 0) for doc_idx in range(N)]
     if citations_list:
-        citation_threshold = np.median(citations_list)  # Use median of all citations
+        citation_threshold = np.median(citations_list)
     else:
         citation_threshold = 0.0
 
@@ -266,30 +266,30 @@ def initial_scores(query_tokens):
 
     return scores
 
-def search_local(query_text, top_k=100, bm25_k=500, bi_k=200):
+
+def search_local(query_text, top_k=100, initial_k=500, bi_k=200):
     query_tokens = tokenize(query_text)
 
-    # Step 1: Initial retrieval
-    raw_score = raw_scores(query_tokens) 
-    raw_bm25_scores = initial_scores(query_tokens)
-    bm25_top_indices = sorted(range(len(raw_bm25_scores)),
-                              key=lambda i: raw_bm25_scores[i],
-                              reverse=True)[:bm25_k]
+    # Step 1: Initial Retrieval
+    raw_score = raw_scores(query_tokens)
+    raw_initial_scores = initial_retrieval_scores(query_tokens)
+    initial_top_indices = sorted(range(len(raw_initial_scores)),
+                                 key=lambda i: raw_initial_scores[i],
+                                 reverse=True)[:initial_k]
 
-    bm25_top_doc_ids = [doc_id_list[i] for i in bm25_top_indices]
-    bm25_top_texts = [doc_texts[i] for i in bm25_top_indices]
+    initial_top_doc_ids = [doc_id_list[i] for i in initial_top_indices]
+    initial_top_texts = [doc_texts[i] for i in initial_top_indices]
 
-    if not bm25_top_texts:
+    if not initial_top_texts:
         return []
 
     # Step 2: Bi-Encoder reranking
-    # Pass only the top 100 from BM25 to the bi-encoder
-    num_for_biencoder = min(bi_k, len(bm25_top_texts))
-    bm25_for_biencoder_ids = bm25_top_doc_ids[:num_for_biencoder]
-    bm25_for_biencoder_texts = bm25_top_texts[:num_for_biencoder]
+    num_for_biencoder = min(bi_k, len(initial_top_texts))
+    initial_for_biencoder_ids = initial_top_doc_ids[:num_for_biencoder]
+    initial_for_biencoder_texts = initial_top_texts[:num_for_biencoder]
     
     query_embedding = bi_encoder.encode(query_text, convert_to_tensor=True)
-    doc_embeddings = bi_encoder.encode(bm25_for_biencoder_texts, convert_to_tensor=True)
+    doc_embeddings = bi_encoder.encode(initial_for_biencoder_texts, convert_to_tensor=True)
     bi_scores = util.pytorch_cos_sim(query_embedding, doc_embeddings)[0].tolist()
 
     # Sort the bi-encoder scores to get the top `top_k` for the cross-encoder
@@ -297,11 +297,11 @@ def search_local(query_text, top_k=100, bm25_k=500, bi_k=200):
                             key=lambda i: bi_scores[i],
                             reverse=True)[:top_k]
 
-    bi_top_doc_ids = [bm25_for_biencoder_ids[i] for i in bi_top_indices]
-    bi_top_texts = [bm25_for_biencoder_texts[i] for i in bi_top_indices]
+    bi_top_doc_ids = [initial_for_biencoder_ids[i] for i in bi_top_indices]
+    bi_top_texts = [initial_for_biencoder_texts[i] for i in bi_top_indices]
     bi_top_scores = [bi_scores[i] for i in bi_top_indices]
 
-    # Step 3: Cross-Encoder reranking with citation normalization (same as training)
+    # Step 3: Cross-Encoder reranking with citation normalization
     max_cite = max([corpus[doc_id]["citations"] for doc_id in corpus if corpus[doc_id]["citations"] > 0] + [1])
 
     def normalize_citation(c):
@@ -314,27 +314,26 @@ def search_local(query_text, top_k=100, bm25_k=500, bi_k=200):
         doc_text = f"[CIT={citation_norm:.3f}] {doc_info['title']}. {doc_info['text']}"
         cross_inputs.append((query_text, doc_text))
 
-    # Predict citation-aware relevance scores
     cross_scores = cross_encoder.predict(cross_inputs)
 
-
-    # Final sort of the top 50 documents from the cross-encoder
     ranked = sorted(
         zip(bi_top_doc_ids, bi_top_scores, cross_scores),
-        key=lambda x: x[2],  # sort by cross-encoder
+        key=lambda x: x[2],
         reverse=True
     )[:top_k]
 
-    initial_raw_lookup = {doc_id_list[i]: raw_score[i] for i in bm25_top_indices}
-    initial_lookup = {doc_id_list[i]: raw_bm25_scores[i] for i in bm25_top_indices}
+    initial_raw_lookup = {doc_id_list[i]: raw_score[i] for i in initial_top_indices}
+    initial_lookup = {doc_id_list[i]: raw_initial_scores[i] for i in initial_top_indices}
     bi_lookup = {doc_id: score for doc_id, score in zip(bi_top_doc_ids, bi_top_scores)}
 
     return ranked, initial_lookup, initial_raw_lookup, bi_lookup
+
 
 # --- Flask Routes ---
 @app.route('/')
 def index():
     return render_template('index.html', queries=queries)
+
 
 @app.route('/results', methods=['GET', 'POST'])
 def results():
@@ -348,22 +347,13 @@ def results():
         if not selected_query_id:
             return render_template('results.html', query="", results=[], queries=queries, experiment_mode=experiment_mode)
         query_text = queries[selected_query_id]
-        print("🧠 DEBUG: Received selected_query_id =", selected_query_id)  
     else:
-        query_text = request.args.get("query") or request.form.get("query")
         if not query_text:
             return render_template('results.html', query="", results=[], queries=queries, experiment_mode=experiment_mode)
 
-    
-    print("🧠 DEBUG: Experiment mode =", experiment_mode)
-    print("🧠 DEBUG: Incoming query parameters:", dict(request.args))
-    print("🧩 DEBUG: Received query_id =", query_id)
-    print("🧩 DEBUG: Received query_text =", query_text)
-
     # --- Run retrieval pipeline ---
-    ranked, initial_lookup, initial_raw_lookup, bi_lookup = search_local(query_text, top_k=100) 
+    ranked, initial_lookup, initial_raw_lookup, bi_lookup = search_local(query_text, top_k=100)
 
-    # --- Build rel_map only if experiment mode ON ---
     rel_map = {}
     if experiment_mode == "on":
         selected_query_id = request.args.get('query_id') or request.form.get('query_id')
@@ -373,7 +363,7 @@ def results():
     predicted_rels, final_results, ranked_doc_ids = [], [], []
     value_threshold = np.median(list(initial_raw_lookup.values())) if initial_raw_lookup else 0.0
 
-    # --- Only evaluate top 50 ranked docs (cross-encoder output) ---
+    # --- Only evaluate top 100 ranked docs (cross-encoder output) ---
     top_ranked = ranked[:100]
     for rank, (doc_id, bi_score, score) in enumerate(top_ranked, start=1):
         doc = corpus[doc_id]
@@ -404,7 +394,7 @@ def results():
             'high_relevance': high_relevance
         })
 
-    # --- Compute metrics only on top 50 docs ---
+    # --- Compute metrics only on top_k docs ---
     if experiment_mode == "on" and predicted_rels:
         ideal_rels = sorted(
             [rel_map.get(doc_id, 0) for doc_id in ranked_doc_ids],
@@ -417,7 +407,6 @@ def results():
 
     nfairr = compute_nfairr_citation(ranked_doc_ids[:100], top_k=100)
 
-   
     date_filter = request.args.get("date_filter") or request.form.get("date_filter")
     start_year = request.args.get('start_year')
     end_year = request.args.get('end_year')
@@ -425,14 +414,10 @@ def results():
 
     # --- Date Filtering ---
     if date_filter == 'recent':
-        # Only numeric years, sort descending
         final_results.sort(
             key=lambda r: int(r['year']) if str(r['year']).isdigit() else 0,
             reverse=True
         )
-        print("🧠 DEBUG: Sorting by most recent year...")
-        print("Top 5 years after sort:", [r['year'] for r in final_results[:5]])
-
     elif date_filter == 'custom' and start_year and end_year:
         try:
             start_y, end_y = int(start_year), int(end_year)
@@ -442,16 +427,13 @@ def results():
             ]
         except ValueError:
             print("⚠️ Invalid custom year range input.")
-    else:
-        print("🧠 DEBUG: No date filtering applied.")
 
-    # --- Sort by dropdown ---
+    # --- Sort by dropdown --- 
     if sort_by == 'citations':
         final_results.sort(key=lambda x: x.get('citations', 0), reverse=True)
     elif sort_by == 'relevance' and date_filter != 'recent':
         final_results.sort(key=lambda x: x.get('score', 0), reverse=True)
 
-    # ============================================================
     return render_template(
         'results.html',
         query=query_text,
@@ -461,7 +443,7 @@ def results():
         nfairr=round(nfairr, 4),
         queries=queries,
         experiment_mode=experiment_mode
-    ) 
+    )
 
 
 # --- Run App ---
@@ -471,4 +453,3 @@ if __name__ == '__main__':
         print("Database tables created successfully.")
         print("Flask app is starting...")
     app.run(debug=True, port=5001)
-

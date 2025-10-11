@@ -98,7 +98,7 @@ for _, row in qrels_df.iterrows():
     qrels[str(row["query_id"])][row["doc_id"]] = int(row["score"])
 
 
-# --- Text preprocessing / tokenization utility ---
+# --- Text preprocessing / tokenization / normalization utility ---
 _token_re = re.compile(r"[^\w\s]")
 
 def tokenize(text: str):

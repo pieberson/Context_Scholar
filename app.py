@@ -170,36 +170,42 @@ def compute_mrr(relevances):
             return 1 / (i + 1)
     return 0
 
-def compute_nfairr_citation(ranked_doc_ids, top_k=50):
+def compute_nfairr_citation(ranked_doc_ids, top_k=100):
     """
-    NFaiRR fairness metric for citation counts.
-    Evaluates whether the top-k results are dominated by highly cited papers.
-    Higher score = more balance (not just high-cited docs at the top).
+    Improved NFaiRR fairness metric for citation balance.
+    Higher score = top results favor low-cited (less biased) papers.
     """
-
-    # Consider only top_k documents
     top_ranked = ranked_doc_ids[:top_k]
+    if not top_ranked:
+        return 0
 
-    citation_weights = []
-    for rank, doc_id in enumerate(top_ranked):
-        citations = corpus[doc_id].get("citations", 1)
-        # fairness weight: lower for highly cited docs, higher for low-cited
-        fairness_weight = 1 / math.log1p(citations + 1e-6)
-        score = fairness_weight / (rank + 1)  # rank discount
-        citation_weights.append(score)
+    citation_values = []
+    for doc_id in top_ranked:
+        citations = corpus[doc_id].get("citations", 0)
+        citation_values.append(citations)
 
-    # Ideal: sort by fairness (low citations first → highest weight)
-    ideal_order = sorted(
-        [1 / math.log1p(corpus[doc_id].get("citations", 1) + 1e-6) for doc_id in top_ranked],
-        reverse=True
+    # Normalize citation counts (avoid log(0))
+    norm_citations = [math.log1p(c + 1e-6) for c in citation_values]
+    max_cite = max(norm_citations) if norm_citations else 1
+
+    # Compute fairness weights: higher for low citations
+    fairness_weights = [1 - (c / max_cite) for c in norm_citations]
+
+    # Apply rank-based discount (higher ranks matter more)
+    discounted_fairness = [
+        w / math.log2(rank + 2) for rank, w in enumerate(fairness_weights)
+    ]
+
+    actual_score = sum(discounted_fairness)
+
+    # Ideal: perfectly fair (lowest citations ranked highest)
+    ideal_sorted = sorted(fairness_weights, reverse=True)
+    ideal_score = sum(
+        w / math.log2(rank + 2) for rank, w in enumerate(ideal_sorted)
     )
 
-    ideal_scores = [w / (i + 1) for i, w in enumerate(ideal_order)]
-
-    actual = sum(citation_weights)
-    ideal = sum(ideal_scores)
-    return actual / ideal if ideal != 0 else 0
-
+    nfairr = actual_score / ideal_score if ideal_score != 0 else 0
+    return nfairr
 
 
 # --- Initial manual scoring ---
@@ -248,7 +254,7 @@ def initial_scores(query_tokens):
     else:
         citation_threshold = 0.0
 
-    # 🔹 Apply citation boost with conditional logic
+    # Apply citation boost with conditional logic
     for doc_idx in range(N):
         raw_score1 = scores[doc_idx]
         citations = corpus[doc_id_list[doc_idx]].get("citations", 0)
@@ -260,7 +266,7 @@ def initial_scores(query_tokens):
 
     return scores
 
-def search_local(query_text, top_k=50, bm25_k=200, bi_k=100):
+def search_local(query_text, top_k=100, bm25_k=500, bi_k=200):
     query_tokens = tokenize(query_text)
 
     # Step 1: Initial retrieval
@@ -355,7 +361,7 @@ def results():
     print("🧩 DEBUG: Received query_text =", query_text)
 
     # --- Run retrieval pipeline ---
-    ranked, initial_lookup, initial_raw_lookup, bi_lookup = search_local(query_text, top_k=50) 
+    ranked, initial_lookup, initial_raw_lookup, bi_lookup = search_local(query_text, top_k=100) 
 
     # --- Build rel_map only if experiment mode ON ---
     rel_map = {}
@@ -368,7 +374,7 @@ def results():
     value_threshold = np.median(list(initial_raw_lookup.values())) if initial_raw_lookup else 0.0
 
     # --- Only evaluate top 50 ranked docs (cross-encoder output) ---
-    top_ranked = ranked[:50]
+    top_ranked = ranked[:100]
     for rank, (doc_id, bi_score, score) in enumerate(top_ranked, start=1):
         doc = corpus[doc_id]
         rel_score = rel_map.get(doc_id, 0) if experiment_mode == "on" else 0
@@ -403,13 +409,13 @@ def results():
         ideal_rels = sorted(
             [rel_map.get(doc_id, 0) for doc_id in ranked_doc_ids],
             reverse=True
-        )[:50]
+        )[:100]
         ndcg = compute_ndcg(predicted_rels, ideal_rels)
         mrr = compute_mrr(predicted_rels)
     else:
         ndcg, mrr = 0, 0
 
-    nfairr = compute_nfairr_citation(ranked_doc_ids[:50], top_k=50)
+    nfairr = compute_nfairr_citation(ranked_doc_ids[:100], top_k=100)
 
    
     date_filter = request.args.get("date_filter") or request.form.get("date_filter")

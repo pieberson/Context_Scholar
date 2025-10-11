@@ -418,15 +418,25 @@ def results():
             key=lambda r: int(r['year']) if str(r['year']).isdigit() else 0,
             reverse=True
         )
-    elif date_filter == 'custom' and start_year and end_year:
+
+    elif date_filter == 'custom':
         try:
-            start_y, end_y = int(start_year), int(end_year)
-            final_results = [
-                r for r in final_results
-                if str(r['year']).isdigit() and start_y <= int(r['year']) <= end_y
-            ]
+            # Validate inputs
+            if start_year and end_year:
+                start_y, end_y = int(start_year), int(end_year)
+                
+                if start_y <= end_y:
+                    final_results = [
+                        r for r in final_results
+                        if str(r['year']).isdigit() and start_y <= int(r['year']) <= end_y
+                    ]
+                else:
+                    print("⚠️ Start year must be less than or equal to end year.")
+            else:
+                print("⚠️ Both start and end years must be provided for custom range filtering.")
         except ValueError:
             print("⚠️ Invalid custom year range input.")
+
 
     # --- Sort by dropdown --- 
     if sort_by == 'citations':

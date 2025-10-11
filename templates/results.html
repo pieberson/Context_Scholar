@@ -146,7 +146,9 @@
                                 <strong>Raw Score:</strong> {{ paper.initial_raw }}
                             </p>
                             {% endif %}
-                            <div class="abstract">{{ paper.abstract }}</div>
+                            <div class="abstract">
+                                {{ paper.abstract if paper.abstract and paper.abstract != 'nan' else 'Not available' }}
+                            </div>
                             <!-- Action Bar -->
                             <div class="d-flex justify-content-between align-items-center mt-3">
                                 <!-- Left: Buttons -->
@@ -365,20 +367,38 @@ document.addEventListener('DOMContentLoaded', function () {
     citeModal.querySelector('#cite-url').setAttribute('href', url);
   });
   
-  // Show/hide custom year fields based on radio selection
+  // Show/hide custom year fields
   const dateRadios = document.querySelectorAll('input[name="date_filter"]');
   const customYearFields = document.getElementById('customYearFields');
-  
   dateRadios.forEach(radio => {
     radio.addEventListener('change', function() {
-      if (this.value === 'custom') {
-        customYearFields.style.display = 'flex';
-      } else {
-        customYearFields.style.display = 'none';
-      }
+      customYearFields.style.display = (this.value === 'custom') ? 'flex' : 'none';
     });
   });
-});
 
-</script> 
+  // Custom validation for year range
+  const filterForm = document.getElementById('filterForm');
+  filterForm.addEventListener('submit', function (e) {
+    const dateFilter = document.querySelector('input[name="date_filter"]:checked');
+    const startYearInput = document.querySelector('input[name="start_year"]');
+    const endYearInput = document.querySelector('input[name="end_year"]');
+
+    if (dateFilter && dateFilter.value === 'custom') {
+      const startYear = parseInt(startYearInput.value);
+      const endYear = parseInt(endYearInput.value);
+
+      if (!startYear || !endYear) {
+        e.preventDefault();
+        alert("⚠️ Please provide both start and end years.");
+        return;
+      }
+
+      if (startYear > endYear) {
+        e.preventDefault();
+        alert("⚠️ Start year must be less than or equal to end year.");
+      }
+    }
+  });
+});
+</script>
 {% endblock %}

@@ -15,7 +15,7 @@
             <input class="form-check-input" type="checkbox" id="experimentToggle" checked>
             <label class="form-check-label" for="experimentToggle">Demo Mode</label>
         </div>
-
+        
         <!-- 🔹 Experiment Mode OFF (Free Search) -->
         <form action="{{ url_for('results') }}" method="GET" id="normalForm" class="mt-4" style="max-width: 768px; width: 100%; display: none;">
             <input type="hidden" name="experiment_mode" value="off">
@@ -51,6 +51,7 @@
         </form>
     </div> 
 
+    
 
     <!-- Cards Section -->
     <div class="container">
@@ -80,6 +81,7 @@
     </div>
 </main>
 
+{% include "modals.html" %}
 <!-- Footer -->
 <div class="footer" style="background-color: #231f20; padding-left: 2rem; padding-right: 1rem;">
     <footer class="row row-cols-1 row-cols-sm-2 row-cols-md-5 py-4 my-4 border-top small">
@@ -138,5 +140,5 @@
 </div> 
 
 <!-- JS to toggle between forms -->
-{% include "modals.html" %}
+
 {% endblock %}

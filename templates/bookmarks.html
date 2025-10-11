@@ -1,22 +1,61 @@
-{% extends 'base.html' %}
+{% extends "base.html" %}
 
-{% block content %}  
-<div class="col-md-6">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-success text-white">
-                    Your Bookmarks
-                </div>
-                <div class="card-body">
-                    {% if bookmarks %}
-                        <ul class="list-group">
-                            {% for item in bookmarks %}
-                                <li class="list-group-item">{{ item.title }}</li>
-                            {% endfor %}
-                        </ul>
-                    {% else %}
-                        <p>No bookmarks yet.</p>
-                    {% endif %}
-                </div>
+{% block content %}
+<div class="main-container my-5">
+    <!-- Header Section -->
+    <div class="d-flex flex-md-row justify-content-center align-items-center mt-4">
+        <div class="d-flex flex-column flex-md-row align-items-center text-center text-md-start gap-0">
+            <a href="{{ url_for('main.index') }}">
+                <img src="{{ url_for('static', filename='assets/Logov2.png') }}" 
+                     alt="logo" class="img-fluid" style="width: 60px; height: auto; z-index: 1;">
+            </a>
+            <div class="ms-md-3 mt-3 mt-md-0">
+                <h1 class="mb-1">Context Scholar</h1>
             </div>
+        </div>
+    </div>
+
+    <!-- Bookmarks Content -->
+    <div class="container mt-4">
+        <h2 class="mb-4">My Saved Papers</h2>
+
+        {% if bookmarks %}
+            <div class="results-section">
+                {% for paper in bookmarks %}
+                    <div class="paper-card card mb-3">
+                        <div class="card-body">
+                            <div class="paper-title">
+                                <a href="{{ paper.url }}" target="_blank">{{ paper.title }}</a>
+                            </div>
+                            <div class="authors">👤 {{ paper.authors }}</div>
+                            <p class="card-text">
+                                <strong>Citations:</strong> {{ paper.citations }} |
+                                <strong>Year:</strong> {{ paper.year }}
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center mt-3">
+                                <div class="btn-group" role="group">
+                                    <a href="{{ paper.url }}" target="_blank" class="btn btn-sm btn-primary">
+                                        View
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger remove-bookmark-btn"
+                                            data-id="{{ paper.id }}">
+                                        <i class="fa fa-trash"></i> Remove
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        {% else %}
+            <div class="text-center mt-5">
+                <h4>You have no saved papers yet.</h4>
+                <p>Start saving papers from your search results to see them here.</p>
+            </div>
+        {% endif %}
+    </div>
 </div>
+
+{% include "modals.html" %}
 {% endblock %}

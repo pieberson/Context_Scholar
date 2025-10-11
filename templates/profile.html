@@ -1,15 +1,52 @@
 {% extends 'base.html' %}
 
 {% block content %}
-<div class="container mt-5">
-    <h2 class="mb-4">Profile Page</h2>
 
-    <div class="row">
-        <!-- Edit Profile Section -->
-        <div class="col-md-6">
-            <div class="card shadow-sm mb-4">
-                <div class="card-header bg-primary text-white">
-                    Edit Profile
+<div class="profile-container">
+    <!-- Profile Header -->
+    <div class="profile-header">
+        <div class="d-flex flex-column flex-md-row align-items-center justify-content-center text-center text-md-start gap-3 mb-4">
+            <a href="{{ url_for('index') }}">
+                <img src="{{ url_for('static', filename='assets/Logov2.png') }}" 
+                     alt="logo" class="img-fluid" style="width: 60px; height: auto;">
+            </a>
+            <div>
+                <h1 class="mb-1">Context Scholar</h1>
+                <p class="text-muted">User Profile</p>
+            </div>
+        </div>
+        
+        <div class="profile-avatar">
+            {{ user.name[0] | upper }}{% if user.nickname %}{{ user.nickname[0] | upper }}{% endif %}
+        </div>
+        
+        <h2 class="mb-2">{{ user.name }}{% if user.nickname %} ({{ user.nickname }}){% endif %}</h2>
+        <p class="text-muted">Member since {{ user.join_date.strftime('%B %Y') if user.join_date else 'Recently' }}</p>
+        
+        <div class="profile-stats">
+            <div class="stat-item">
+                <div class="stat-value">{% if bookmarks %}{{ bookmarks|length }}{% else %}0{% endif %}</div>
+                <div class="stat-label">Saved Papers</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">{% if search_history %}{{ search_history|length }}{% else %}0{% endif %}</div>
+                <div class="stat-label">Searches</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-value">12</div>
+                <div class="stat-label">Citations</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Content Grid -->
+    <div class="profile-content">
+        <!-- Left Column -->
+        <div class="left-column">
+            <!-- Edit Profile Card -->
+            <div class="profile-card mb-4">
+                <div class="card-header">
+                    <i class="fas fa-user-edit me-2"></i>Edit Profile
                 </div>
                 <div class="card-body">
                     <form method="POST">
@@ -21,13 +58,74 @@
                         <div class="mb-3">
                             <label for="nickname" class="form-label">Nickname (Optional)</label>
                             <input type="text" class="form-control" id="nickname" name="nickname" value="{{ user.nickname or '' }}">
+                            <div class="form-text">This will be displayed alongside your name.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="email" class="form-label">Email Address</label>
+                            <input type="email" class="form-control" id="email" name="email" value="{{ user.email or '' }}" disabled>
+                            <div class="form-text">Contact support to change your email address.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="bio" class="form-label">Bio (Optional)</label>
+                            <textarea class="form-control" id="bio" name="bio" rows="3" placeholder="Tell us about your research interests...">{{ user.bio or '' }}</textarea>
                         </div>
 
-                        <button type="submit" class="btn btn-primary">Save Changes</button>
+                        <button type="submit" class="btn btn-primary w-100">Save Changes</button>
                     </form>
                 </div>
             </div>
         </div>
+        
+        <!-- Right Column -->
+        <div class="right-column">
+            <!-- Saved Papers Card -->
+            <div class="profile-card" style="height: 100%;">
+            <div class="card-header">
+                <i class="fas fa-bookmark me-2"></i>Saved Papers
+            </div>
+            <div class="card-body saved-papers-card-body">
+                <div class="saved-papers-list">
+                {% if bookmarks and bookmarks|length > 0 %}
+                    {% for paper in bookmarks[:5] %}
+                    <div class="paper-item">
+                        <div class="paper-info">
+                        <div class="paper-title" style="color: white;">{{ paper.title[:80] }}{% if paper.title|length > 80 %}...{% endif %}</div>
+                        <div class="paper-meta">
+                            {{ paper.authors[:50] }}{% if paper.authors|length > 50 %}...{% endif %} • {{ paper.year }}
+                        </div>
+                        </div>
+                        <div class="paper-actions">
+                        <a href="{{ paper.url }}" target="_blank" class="btn btn-sm btn-primary btn-sm">
+                            <i class="fa fa-eye fa-sm"></i> 
+                        </a>
+                        <button type="button" 
+                            class="btn btn-sm btn-outline-danger remove-save-btn"
+                            data-id="{{ paper.id }}">
+                        <i class="fa fa-trash"></i> 
+                        </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+
+                    {% if bookmarks|length > 5 %}
+                    <div class="text-center mt-3">
+                        <a href="{{ url_for('main.bookmarks') }}" class="btn btn-sm btn-outline-primary">View All ({{ bookmarks|length }})</a>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="empty-state">
+                    <i class="fas fa-bookmark"></i>
+                    <p>No saved papers yet</p>
+                    <p class="small">Papers you save will appear here for quick access.</p>
+                    <a href="{{ url_for('index') }}" class="btn btn-primary mt-2">Start Searching</a>
+                    </div>
+                {% endif %}
+                </div>
+            </div>
+            </div>
     </div>
-</div>
+</div> 
+{% include "modals.html" %}
 {% endblock %}

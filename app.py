@@ -170,7 +170,7 @@ def compute_mrr(relevances):
             return 1 / (i + 1)
     return 0
 
-def compute_nfairr_citation(ranked_doc_ids, top_k=100):
+def compute_nfairr_citation(ranked_doc_ids, top_k=50):
     """
     NFaiRR fairness metric for citation balance.
     Higher score = top results favor low-cited (less biased) papers.
@@ -267,7 +267,7 @@ def initial_retrieval_scores(query_tokens):
     return scores
 
 
-def search_local(query_text, top_k=100, initial_k=500, bi_k=200):
+def search_local(query_text, top_k=50, initial_k=250, bi_k=100):
     query_tokens = tokenize(query_text)
 
     # Step 1: Initial Retrieval
@@ -352,7 +352,7 @@ def results():
             return render_template('results.html', query="", results=[], queries=queries, experiment_mode=experiment_mode)
 
     # --- Run retrieval pipeline ---
-    ranked, initial_lookup, initial_raw_lookup, bi_lookup = search_local(query_text, top_k=100)
+    ranked, initial_lookup, initial_raw_lookup, bi_lookup = search_local(query_text, top_k=50)
 
     rel_map = {}
     if experiment_mode == "on":
@@ -363,8 +363,8 @@ def results():
     predicted_rels, final_results, ranked_doc_ids = [], [], []
     value_threshold = np.median(list(initial_raw_lookup.values())) if initial_raw_lookup else 0.0
 
-    # --- Only evaluate top 100 ranked docs (cross-encoder output) ---
-    top_ranked = ranked[:100]
+    # --- Only evaluate top_k ranked docs (cross-encoder output) ---
+    top_ranked = ranked[:50]
     for rank, (doc_id, bi_score, score) in enumerate(top_ranked, start=1):
         doc = corpus[doc_id]
         rel_score = rel_map.get(doc_id, 0) if experiment_mode == "on" else 0
@@ -399,13 +399,13 @@ def results():
         ideal_rels = sorted(
             [rel_map.get(doc_id, 0) for doc_id in ranked_doc_ids],
             reverse=True
-        )[:100]
+        )[:50]
         ndcg = compute_ndcg(predicted_rels, ideal_rels)
         mrr = compute_mrr(predicted_rels)
     else:
         ndcg, mrr = 0, 0
 
-    nfairr = compute_nfairr_citation(ranked_doc_ids[:100], top_k=100)
+    nfairr = compute_nfairr_citation(ranked_doc_ids[:50], top_k=50)
 
     date_filter = request.args.get("date_filter") or request.form.get("date_filter")
     start_year = request.args.get('start_year')

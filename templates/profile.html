@@ -21,21 +21,22 @@
         </div>
         
         <h2 class="mb-2">{{ user.name }}{% if user.nickname %} ({{ user.nickname }}){% endif %}</h2>
-        <p class="text-muted">Member since {{ user.join_date.strftime('%B %Y') if user.join_date else 'Recently' }}</p>
+        <!-- <p class="text-muted">Member since {{ user.join_date.strftime('%B %Y') if user.join_date else 'Recently' }}</p> -->
+        <p class="text-muted">{{ user.bio }}</p>
         
         <div class="profile-stats">
             <div class="stat-item">
                 <div class="stat-value">{% if bookmarks %}{{ bookmarks|length }}{% else %}0{% endif %}</div>
                 <div class="stat-label">Saved Papers</div>
             </div>
-            <div class="stat-item">
+            <!-- <div class="stat-item">
                 <div class="stat-value">{% if search_history %}{{ search_history|length }}{% else %}0{% endif %}</div>
                 <div class="stat-label">Searches</div>
             </div>
             <div class="stat-item">
                 <div class="stat-value">12</div>
                 <div class="stat-label">Citations</div>
-            </div>
+            </div> -->
         </div>
     </div>
 

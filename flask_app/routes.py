@@ -80,9 +80,10 @@ def profile():
         return redirect(url_for('main.profile'))
 
     bookmark_list = SavedPaper.query.filter_by(user_id=user.id).all()
+    bio = user.bio if user.bio else "No bio available."
 
     # GET request – just show profile page
-    return render_template('profile.html', user=user, bookmarks=bookmark_list)
+    return render_template('profile.html', user=user, bookmarks=bookmark_list, bio=bio)
 
 @bp.route('/bookmarks')
 def bookmarks():

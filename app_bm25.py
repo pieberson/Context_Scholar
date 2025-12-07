@@ -89,7 +89,7 @@ def compute_mrr(relevances):
             return 1 / (i + 1)
     return 0
 
-def compute_nfairr_citation(ranked_doc_ids, top_k=100):
+def compute_nfairr_citation(ranked_doc_ids, top_k=5):
     """
     NFaiRR fairness metric for citation balance.
     Higher = top results favor low-cited papers.
@@ -149,7 +149,7 @@ def results():
         return render_template('results.html', query="", results=[], queries=queries, experiment_mode=experiment_mode)
 
     # --- Run BM25 retrieval ---
-    ranked, bm25_lookup = search_local(query_text, top_k=100)
+    ranked, bm25_lookup = search_local(query_text, top_k=5)
 
     rel_map = {}
     if experiment_mode == "on":
@@ -181,7 +181,7 @@ def results():
     else:
         ndcg, mrr = 0, 0
 
-    nfairr = compute_nfairr_citation(ranked_doc_ids, top_k=100)
+    nfairr = compute_nfairr_citation(ranked_doc_ids, top_k=5)
 
     return render_template(
         'results.html',
@@ -201,4 +201,4 @@ if __name__ == '__main__':
         db.create_all()
         print("Database tables created successfully.")
         print("Flask app is starting (BM25 via rank_bm25)...")
-    app.run(debug=True, port=5002)
+    app.run(debug=True, port=5005)

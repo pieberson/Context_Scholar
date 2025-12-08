@@ -16,8 +16,50 @@
     </div>
 
     <!-- Bookmarks Content -->
+
+    <div class="content-wrapper"> 
+
+        <div class="filters-section">
+            <div class="filter-card">
+                <div class="filter-header">
+                    <h3 class="filter-title">Filters</h3>
+                    <a href="{{ url_for('results') }}" class="filter-reset">Reset</a>
+                </div>
+                
+                <form method="GET" action="/bookmarks" id="filterForm">
+                    <input type="hidden" name="experiment_mode" value="{{ 'on' if exp_mode else 'off' }}">
+
+                    {% if exp_mode %}
+                        <input type="hidden" name="query_id" value="{{ request.args.get('query_id') or request.form.get('query_id', '') }}">
+                    {% else %}
+                        <input type="hidden" name="query" value="{{ request.args.get('query') or request.form.get('query', '') }}">
+                    {% endif %}
+
+                    <!-- Sort By Dropdown -->
+                    <div class="filter-group">
+                        <label class="filter-label" for="sort_by">Order By</label>
+                        <select class="form-select" name="sort_by" id="sort_by">
+                            <option value="relevance" {% if request.args.get('sort_by') == 'relevance' %}selected{% endif %}>
+                                Default
+                            </option>
+                            <option value="citations" {% if request.args.get('sort_by') == 'citations' %}selected{% endif %}>
+                                Citation Count
+                            </option>
+                            <option value="recent" {% if request.args.get('sort_by') == 'recent' %}selected{% endif %}>
+                                Most Recent
+                            </option>
+                        </select>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100" style="background-color: #6f42c1; border-color: #6f42c1">
+                        Apply Filters
+                    </button>
+                    <input type="hidden" name="query_id" value="{{ query_id if query_id else request.args.get('query_id', '') }}">
+                </form>
+            </div>
+        </div>
     <div class="container mt-4">
-        <h2 class="mb-4">My Saved Papers</h2>
+        <h2 class="mb-4">My Saved Papers</h2>  
 
         {% if bookmarks %}
             <div class="results-section">
@@ -54,6 +96,7 @@
                 <p>Start saving papers from your search results to see them here.</p>
             </div>
         {% endif %}
+    </div>
     </div>
 </div>
 

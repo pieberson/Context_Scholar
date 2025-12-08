@@ -407,12 +407,12 @@ def results():
 
     nfairr = compute_nfairr_citation(ranked_doc_ids[:50], top_k=50)
 
+    # --- Date Filtering ---
     date_filter = request.args.get("date_filter") or request.form.get("date_filter")
     start_year = request.args.get('start_year')
     end_year = request.args.get('end_year')
     sort_by = request.args.get("sort_by") or request.form.get("sort_by")
 
-    # --- Date Filtering ---
     if date_filter == 'recent':
         final_results.sort(
             key=lambda r: int(r['year']) if str(r['year']).isdigit() else 0,

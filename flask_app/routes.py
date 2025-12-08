@@ -91,7 +91,32 @@ def bookmarks():
         return redirect(url_for('main.login'))
 
     user_id = session['user_id']
-    bookmarks_list = SavedPaper.query.filter_by(user_id=user_id).all()
+    bookmarks_list = SavedPaper.query.filter_by(user_id=user_id).all() 
+
+    # --- Date Filtering ---
+    date_filter = request.args.get("date_filter") or request.form.get("date_filter")
+    start_year = request.args.get('start_year')
+    end_year = request.args.get('end_year')
+    sort_by = request.args.get("sort_by") or request.form.get("sort_by")
+
+    # --- Sort by dropdown --- 
+    if sort_by == 'citations':
+        bookmarks_list = sorted(
+            bookmarks_list,
+            key=lambda x: x.citations or 0,
+            reverse=True
+        )
+    elif sort_by == 'relevance' and date_filter != 'recent':
+        bookmarks_list = sorted(
+            bookmarks_list,
+            key=lambda x: x.score or 0,
+            reverse=True
+        )
+    elif sort_by == 'recent':
+        bookmarks_list.sort(
+            key=lambda r: int(r.year) if str(r.year).isdigit() else 0,
+            reverse=True
+        )
     
     return render_template('bookmarks.html', bookmarks=bookmarks_list)
     

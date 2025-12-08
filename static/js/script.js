@@ -2,7 +2,7 @@ document.addEventListener("DOMContentLoaded", () => {
   // === LOADING OVERLAY HANDLER ===
   const overlay = document.getElementById("loadingOverlay");
   console.debug("🔍 DEBUG: Loading overlay element:", overlay);
-  const forms = document.querySelectorAll("#normalForm, #experimentForm, #normalFormResult, #experimentFormResult");
+  const forms = document.querySelectorAll("#normalForm, #experimentForm, #normalFormResult, #experimentFormResult, #filterForm");
   console.debug("🔍 DEBUG: Found forms:", forms.length);
   forms.forEach(form => {
       if (!form) return;

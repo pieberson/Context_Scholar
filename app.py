@@ -170,7 +170,7 @@ def compute_mrr(relevances):
             return 1 / (i + 1)
     return 0
 
-def compute_nfairr_citation(ranked_doc_ids, top_k=50):
+def compute_nfairr_citation(ranked_doc_ids, top_k=5):
     """
     NFaiRR fairness metric for citation balance.
     Higher score = top results favor low-cited (less biased) papers.
@@ -364,7 +364,7 @@ def results():
     value_threshold = np.median(list(initial_raw_lookup.values())) if initial_raw_lookup else 0.0
 
     # --- Only evaluate top_k ranked docs (cross-encoder output) ---
-    top_ranked = ranked[:50]
+    top_ranked = ranked[:5]
     for rank, (doc_id, bi_score, score) in enumerate(top_ranked, start=1):
         doc = corpus[doc_id]
         rel_score = rel_map.get(doc_id, 0) if experiment_mode == "on" else 0
@@ -399,13 +399,13 @@ def results():
         ideal_rels = sorted(
             [rel_map.get(doc_id, 0) for doc_id in ranked_doc_ids],
             reverse=True
-        )[:50]
+        )[:5]
         ndcg = compute_ndcg(predicted_rels, ideal_rels)
         mrr = compute_mrr(predicted_rels)
     else:
         ndcg, mrr = 0, 0
 
-    nfairr = compute_nfairr_citation(ranked_doc_ids[:50], top_k=50)
+    nfairr = compute_nfairr_citation(ranked_doc_ids[:5], top_k=5)
 
     # --- Date Filtering ---
     date_filter = request.args.get("date_filter") or request.form.get("date_filter")

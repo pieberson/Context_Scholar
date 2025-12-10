@@ -192,17 +192,7 @@
                 {% endfor %}
                 
                 <hr style="border-top: 1px solid #ccc; margin: 2rem 0;">
-                <!-- Metrics Section -->
-                {% if exp_mode and ndcg is defined %}
-                <div class="metrics">
-                    <h4>Evaluation Metrics</h4>
-                    <ul class="metrics-list">
-                        <li><strong>NDCG:</strong> {{ ndcg }}</li>
-                        <li><strong>MRR:</strong> {{ mrr }}</li>
-                        <li><strong>nFAIRR:</strong> {{ nfairr }}</li>
-                    </ul>
-                </div>
-                {% endif %}
+                
                 
             {% else %}
                 <div class="mt-5 text-center" style="height: 50vh;">

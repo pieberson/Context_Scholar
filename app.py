@@ -364,7 +364,7 @@ def results():
     value_threshold = np.median(list(initial_raw_lookup.values())) if initial_raw_lookup else 0.0
 
     # --- Only evaluate top_k ranked docs (cross-encoder output) ---
-    top_ranked = ranked[:5]
+    top_ranked = ranked[:50]
     for rank, (doc_id, bi_score, score) in enumerate(top_ranked, start=1):
         doc = corpus[doc_id]
         rel_score = rel_map.get(doc_id, 0) if experiment_mode == "on" else 0
@@ -393,6 +393,26 @@ def results():
             'fairness_boosted': fairness_boosted,
             'high_relevance': high_relevance
         })
+        
+
+    def normalize_title(t):
+        t = t.lower().strip()
+        t = re.sub(r'[^a-z0-9 ]', '', t)  # remove punctuation
+        t = re.sub(r'\s+', ' ', t)        # collapse multiple spaces
+        return t
+
+    seen_titles = set()
+    deduped_results = []
+
+    for item in final_results:
+        title = item.get("title", "")
+        norm_title = normalize_title(title)
+
+        if norm_title not in seen_titles:
+            deduped_results.append(item)
+            seen_titles.add(norm_title)
+
+    final_results = deduped_results 
 
     # --- Compute metrics only on top_k docs ---
     if experiment_mode == "on" and predicted_rels:
@@ -407,12 +427,12 @@ def results():
 
     nfairr = compute_nfairr_citation(ranked_doc_ids[:5], top_k=5)
 
-    # --- Date Filtering ---
     date_filter = request.args.get("date_filter") or request.form.get("date_filter")
     start_year = request.args.get('start_year')
     end_year = request.args.get('end_year')
     sort_by = request.args.get("sort_by") or request.form.get("sort_by")
 
+    # --- Date Filtering ---
     if date_filter == 'recent':
         final_results.sort(
             key=lambda r: int(r['year']) if str(r['year']).isdigit() else 0,

@@ -393,6 +393,25 @@ def results():
             'fairness_boosted': fairness_boosted,
             'high_relevance': high_relevance
         })
+        
+    def normalize_title(t):
+        t = t.lower().strip()
+        t = re.sub(r'[^a-z0-9 ]', '', t)  # remove punctuation
+        t = re.sub(r'\s+', ' ', t)        # collapse multiple spaces
+        return t
+
+    seen_titles = set()
+    deduped_results = []
+
+    for item in final_results:
+        title = item.get("title", "")
+        norm_title = normalize_title(title)
+
+        if norm_title not in seen_titles:
+            deduped_results.append(item)
+            seen_titles.add(norm_title)
+
+    final_results = deduped_results
 
     # --- Compute metrics only on top_k docs ---
     if experiment_mode == "on" and predicted_rels:

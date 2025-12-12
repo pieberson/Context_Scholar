@@ -1520,7 +1520,7 @@ query_id,doc_id,score
 4,f1q7fsax,0.0
 4,f40bfqa5,0.0
 4,f53i4n02,0.0
-4,f7s8s770,1.0
+4,f7s8s770,2.0
 4,f9hyntvf,0.0
 4,favf1hh3,0.0
 4,fbcu88lv,2.0
@@ -15372,6 +15372,7 @@ query_id,doc_id,score
 38,ajlq8s34,0.0
 38,bq5w3jk9,0.0
 38,bqhml1yo,2.0
+38,dckuhrlf,2.0
 38,brmmpwls,1.0
 38,bsgqsdbx,1.0
 38,bsq4i0n9,1.0

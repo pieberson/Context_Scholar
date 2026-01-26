@@ -62,7 +62,7 @@
             <div class="filter-card">
                 <div class="filter-header">
                     <h3 class="filter-title">Filters</h3>
-                    <a href="{{ url_for('results') }}" class="filter-reset">Reset</a>
+                    <a href="#" class="filter-reset" id="resetFiltersLink">Reset</a>
                 </div>
                 
                 <form method="GET" action="/results" id="filterForm">
@@ -77,13 +77,13 @@
                     <!-- Sort by Date -->
                     <div class="filter-group">
                         <div class="filter-label">Sort by Date</div>
-                        <div class="form-check">
+                        <!-- <div class="form-check">
                             <input class="form-check-input" type="radio" name="date_filter" id="mostRecent" value="recent"
                                     {% if request.args.get('date_filter') == 'recent' %}checked{% endif %}>
                             <label class="form-check-label" for="mostRecent">
                                 Most Recent
                             </label>
-                        </div>
+                        </div> -->
                         <div class="form-check">
                             <input class="form-check-input" type="radio" name="date_filter" id="customRange" value="custom"
                                     {% if request.args.get('date_filter') == 'custom' %}checked{% endif %}>
@@ -95,9 +95,9 @@
                         <!-- Custom Date Inputs (only visible if 'Custom Range' selected) -->
                         <div id="customYearFields" class="custom-year-fields" 
                              style="display: {% if request.args.get('date_filter') == 'custom' %}flex{% else %}none{% endif %};">
-                            <input type="number" name="start_year" placeholder="Start Year" min="1900" max="2025"
+                            <input type="number" name="start_year" placeholder="Start Year" min="1900" max="2026"
                                    value="{{ request.args.get('start_year', '') }}">
-                            <input type="number" name="end_year" placeholder="End Year" min="1900" max="2025"
+                            <input type="number" name="end_year" placeholder="End Year" min="1900" max="2026"
                                    value="{{ request.args.get('end_year', '') }}">
                         </div>
                     </div>
@@ -111,6 +111,9 @@
                             </option>
                             <option value="citations" {% if request.args.get('sort_by') == 'citations' %}selected{% endif %}>
                                 Citation Count
+                            </option>
+                            <option value="recent" {% if request.args.get('sort_by') == 'recent' %}selected{% endif %}>
+                                Most Recent
                             </option>
                         </select>
                     </div>
@@ -146,8 +149,11 @@
                                 <strong>Raw Score:</strong> {{ paper.initial_raw }}
                             </p>
                             {% endif %}
-                            <div class="abstract">
-                                {{ paper.abstract if paper.abstract and paper.abstract != 'nan' else 'No Abstract Available' }}
+                            <div class="abstract-container">
+                                <div class="abstract" data-full-text="{{ paper.abstract if paper.abstract and paper.abstract != 'nan' else 'No Abstract Available' }}">
+                                    {{ paper.abstract if paper.abstract and paper.abstract != 'nan' else 'No Abstract Available' }}
+                                </div>
+                                <button class="see-more-btn" style="display:none;">See More</button>
                             </div>
                             <!-- Action Bar -->
                             <div class="d-flex justify-content-between align-items-center mt-3">
@@ -382,9 +388,26 @@ document.addEventListener('DOMContentLoaded', function () {
 
       if (startYear > endYear) {
         e.preventDefault();
-        alert("⚠️ Start year must be less than or equal to end year.");
+        alert(" Start year must be less than or equal to end year.");
+        return; 
       }
     }
+  });
+
+  // See More / See Less functionality for abstracts
+  document.querySelectorAll('.abstract-container').forEach(container => {
+    const abstractDiv = container.querySelector('.abstract');
+    const seeMoreBtn = container.querySelector('.see-more-btn');
+    
+    // Check if abstract is truncated
+    if (abstractDiv.scrollHeight > abstractDiv.clientHeight) {
+      seeMoreBtn.style.display = 'inline-block';
+    }
+    
+    seeMoreBtn.addEventListener('click', function() {
+      abstractDiv.classList.toggle('expanded');
+      seeMoreBtn.textContent = abstractDiv.classList.contains('expanded') ? 'See Less' : 'See More';
+    });
   });
 });
 </script>

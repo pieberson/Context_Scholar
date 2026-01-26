@@ -461,7 +461,9 @@ def results():
     # --- Sort by dropdown --- 
     if sort_by == 'citations':
         final_results.sort(key=lambda x: x.get('citations', 0), reverse=True)
-    elif sort_by == 'relevance' and date_filter != 'recent':
+    elif sort_by == 'recent':
+        final_results.sort(key=lambda x: int(x.get('year', 0)) if str(x.get('year', 0)).isdigit() else 0, reverse=True)
+    elif sort_by == 'relevance':
         final_results.sort(key=lambda x: x.get('score', 0), reverse=True)
 
     return render_template(

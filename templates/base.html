@@ -21,18 +21,6 @@
             Sign Up
         </button>  -->
 
-        {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            <div class="container mt-3">
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                {{ message }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            {% endfor %}
-            </div>
-        {% endif %}
-        {% endwith %} 
 
         {% if session.user_id %}
             <div class="d-flex align-items-center">
@@ -56,22 +44,35 @@
         {% else %}
             <!-- 🔹 Login Button -->
             <button 
-                class="btn btn-light me-2" 
-                data-bs-toggle="modal" 
-                data-bs-target="#loginModal">
-                Login
+            class="btn btn-md btn-light me-2" 
+            data-bs-toggle="modal" 
+            data-bs-target="#loginModal">
+            Login
             </button>
 
             <!-- 🔹 Sign Up Button (Purple Gradient) -->
             <button 
-                class="btn text-white fw-semibold" 
-                style="background: linear-gradient(135deg, #9863d1 0%, #9a5cd1 100%); border: none;" 
-                data-bs-toggle="modal" 
-                data-bs-target="#signupModal">
-                Sign Up
+            class="btn btn-md text-white fw-semibold" 
+            style="background: linear-gradient(135deg, #9863d1 0%, #9a5cd1 100%); border: none;" 
+            data-bs-toggle="modal" 
+            data-bs-target="#signupModal">
+            Sign Up
             </button>
         {% endif %}
     </div> 
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mt-3">
+            {% for category, message in messages %}
+            <div class="alert alert-{{ category }} alert-dismissible fade show text-center" role="alert" style="max-width: 300px; margin: auto;">
+            {{ message }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+            {% endfor %}
+            </div>
+        {% endif %}
+        {% endwith %} 
         {% block content %}{% endblock %}
     </div> 
     <!-- Bootstrap JS Bundle -->

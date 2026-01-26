@@ -6,11 +6,60 @@ document.addEventListener("DOMContentLoaded", () => {
   console.debug("🔍 DEBUG: Found forms:", forms.length);
   forms.forEach(form => {
       if (!form) return;
-      form.addEventListener("submit", () => {
-          console.debug("🔍 DEBUG: Form submitted, showing overlay");
+          form.addEventListener("submit", (e) => {
+      // ⏳ Let all validation handlers run first
+      setTimeout(() => {
+        if (!e.defaultPrevented) {
+          console.debug("✅ Form valid — showing overlay");
           if (overlay) overlay.style.display = "block";
-      });
+        } else {
+          console.debug("❌ Form invalid — NOT showing overlay");
+        }
+      }, 0);
+    });
+      
   });
+
+  // ==== for filters in result == //
+  const resetLink = document.getElementById("resetFiltersLink");
+const filterForm = document.getElementById("filterForm");
+
+if (resetLink && filterForm) {
+  resetLink.addEventListener("click", (e) => {
+    e.preventDefault(); // ✅ no page reload
+
+    // Reset filter controls (adjust defaults if needed)
+    const sortBy = filterForm.querySelector('select[name="sort_by"]');
+    if (sortBy) sortBy.value = "relevance";
+
+    const mostRecentRadio = document.getElementById("mostRecent");
+    const customRangeRadio = document.getElementById("customRange");
+
+    if (mostRecentRadio) mostRecentRadio.checked = true;
+    if (customRangeRadio) customRangeRadio.checked = false;
+
+    // If you use dropdown for date_filter:
+    const dateFilterSelect = document.getElementById("date_filter") || filterForm.querySelector('select[name="date_filter"]');
+    if (dateFilterSelect) dateFilterSelect.value = "recent";
+
+    // If you still use radios instead, use this block instead of the dropdown line above:
+    // const mostRecent = filterForm.querySelector('#mostRecent');
+    // if (mostRecent) mostRecent.checked = true;
+
+    const startYear = filterForm.querySelector('input[name="start_year"]');
+    const endYear = filterForm.querySelector('input[name="end_year"]');
+    if (startYear) startYear.value = "";
+    if (endYear) endYear.value = "";
+
+    const customYearFields = document.getElementById("customYearFields");
+    if (customYearFields) customYearFields.style.display = "none";
+
+    // Remove only filter params from the URL (keeps query/query_id so results stay)
+    const url = new URL(window.location.href);
+    ["sort_by", "date_filter", "start_year", "end_year"].forEach(p => url.searchParams.delete(p));
+    window.history.replaceState({}, "", url.toString());
+  });
+}
 
   // === DATE RANGE TOGGLE (for results page) ===
   const customRangeRadio = document.getElementById("customRange");
@@ -26,7 +75,7 @@ document.addEventListener("DOMContentLoaded", () => {
     customRangeRadio.addEventListener("change", toggleDateRange);
     mostRecentRadio.addEventListener("change", toggleDateRange);
   } else {
-    console.debug("🧠 DEBUG: Date range controls not found — skipping date toggle setup.");
+    console.debug("DEBUG: Date range controls not found — skipping date toggle setup.");
   }
 
   // === EXPERIMENT TOGGLE (for index page) ===
@@ -48,7 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {
     experimentToggle.addEventListener("change", updateForms);
     updateForms(); // initialize display on load
   } else {
-    console.debug("🧠 DEBUG: Experiment toggle or base forms not found — skipping updateForms setup.");
+    console.debug("DEBUG: Experiment toggle or base forms not found — skipping updateForms setup.");
   } 
 
   // for bookmark removal 

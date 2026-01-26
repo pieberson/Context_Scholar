@@ -23,6 +23,39 @@ body {
     margin-top: 8px;
 }
 
+.abstract-container {
+    position: relative;
+}
+
+.abstract {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    transition: all 0.3s ease;
+}
+
+.abstract.expanded {
+    -webkit-line-clamp: unset;
+    overflow: visible;
+}
+
+.see-more-btn {
+    background: none;
+    border: none;
+    color: #2980b9;
+    cursor: pointer;
+    font-weight: 500;
+    padding: 4px 0;
+    margin-top: 8px;
+    text-decoration: underline;
+    transition: color 0.2s ease;
+}
+
+.see-more-btn:hover {
+    color: #1f6fa6;
+}
+
 hr {
     margin: 40px 0;
     border: 0;
